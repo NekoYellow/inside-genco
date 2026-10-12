@@ -32,6 +32,41 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def prepare_run_directory(
+    run_directory: Path, manifest_path: Path, *, retry_failed: bool
+) -> Path | None:
+    """Create a fresh run directory or archive one failed attempt for a retry."""
+    if not manifest_path.exists():
+        if run_directory.exists():
+            raise FileExistsError(
+                f"run directory exists without a manifest: {run_directory}"
+            )
+        run_directory.mkdir(parents=True)
+        return None
+
+    if not retry_failed:
+        raise FileExistsError(
+            f"run manifest already exists: {manifest_path}; pass --retry-failed "
+            "only if its status is failed"
+        )
+
+    previous = json.loads(manifest_path.read_text())
+    if previous.get("status") != "failed":
+        raise FileExistsError(
+            f"refusing to retry run with status {previous.get('status')!r}: "
+            f"{manifest_path}"
+        )
+
+    attempt = 1
+    while True:
+        archived = manifest_path.with_name(f"manifest.attempt-{attempt}.json")
+        if not archived.exists():
+            break
+        attempt += 1
+    manifest_path.replace(archived)
+    return archived
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--architecture", choices=ARCHITECTURES, required=True)
@@ -41,6 +76,11 @@ def main() -> None:
     parser.add_argument("--compile", choices=("default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs"))
     parser.add_argument("--bfloat16", action="store_true")
     parser.add_argument("--tf32", action="store_true")
+    parser.add_argument(
+        "--retry-failed",
+        action="store_true",
+        help="archive and retry an existing manifest only when its status is failed",
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if args.num_workers is not None and args.num_workers < 0:
@@ -74,8 +114,6 @@ def main() -> None:
     log_dir = output_root / "mlruns"
     run_directory = output_root / "runs" / args.architecture / f"seed{args.seed}"
     manifest_path = run_directory / "manifest.json"
-    if manifest_path.exists() and not args.dry_run:
-        raise FileExistsError(f"run manifest already exists: {manifest_path}")
     plan = {
         "architecture": args.architecture,
         "seed": args.seed,
@@ -105,7 +143,9 @@ def main() -> None:
         print(json.dumps(plan, indent=2))
         return
 
-    run_directory.mkdir(parents=True, exist_ok=False)
+    previous_attempt = prepare_run_directory(
+        run_directory, manifest_path, retry_failed=args.retry_failed
+    )
     started = time.perf_counter()
     manifest = {
         "schema_version": 1,
@@ -117,6 +157,8 @@ def main() -> None:
         ).strip(),
         "plan": plan,
     }
+    if previous_attempt is not None:
+        manifest["retry_of"] = str(previous_attempt.relative_to(ROOT))
 
     def save() -> None:
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")

@@ -57,6 +57,8 @@ done
 
 Each run writes its provenance and terminal status to `outputs/training-controls/runs/<architecture>/seed<seed>/manifest.json`. Model checkpoints, normalizer copies, split records, metrics, and MLflow metadata are stored under `outputs/training-controls/mlruns/`. The wrapper verifies all prepared hashes before training and records the best checkpoint hash and runtime after completion.
 
+If a run has a manifest whose recorded status is `failed`, fix the underlying error and rerun the same command with `--retry-failed`. The wrapper archives the failed record as `manifest.attempt-<n>.json` before starting a new attempt. It refuses to retry manifests marked `running` or `complete`.
+
 Use the same precision options for all nine runs. The default above is FP32. If TF32, bfloat16, compilation, worker count, or hardware changes, apply the change to all runs and report it as a separate protocol.
 
 ## Interpretation boundary
