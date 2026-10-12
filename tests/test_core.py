@@ -8,22 +8,22 @@ import torch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from genco_depth.interventions import InterventionPlan, TensorEdit, stable_relative_perturbation
-from genco_depth.similarity import linear_cka
-from genco_depth.trajectory_metrics import (
+from inside_genco.interventions import InterventionPlan, TensorEdit, stable_relative_perturbation
+from inside_genco.similarity import linear_cka
+from inside_genco.trajectory_metrics import (
     LinearCKAAccumulator,
     first_threshold_crossing,
     local_step_metrics,
     node_relative_l2_updates,
 )
-from genco_depth.intervention_metrics import (
+from inside_genco.intervention_metrics import (
     cluster_bootstrap_mean,
     interaction_effect,
     propagation_metrics,
     rank_steps,
     summarize_paired_effect,
 )
-from genco_depth.compute_policy import (
+from inside_genco.compute_policy import (
     build_policies,
     combination_interaction,
     random_steps,

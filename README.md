@@ -1,6 +1,6 @@
 # Inside GENCO's 12 Correction Steps
 
-This public package contains the compact, reproducible core of an effective-depth study of released GENCO power-flow checkpoints. It follows hidden states and physical residuals through all 12 corrections, measures correction importance through causal bypasses, compares fixed-budget compute policies, and maps node-level state activity.
+This is an effective-depth study of released GENCO power-flow checkpoints. It follows hidden states and physical residuals through all 12 corrections, measures correction importance through causal bypasses, compares fixed-budget compute policies, and maps node-level state activity.
 
 ## Main result
 
@@ -18,7 +18,7 @@ The analysis covers four released checkpoints and 115 fixed-connectivity operati
 
 ## Repository contents
 
-- `src/genco_depth/`: tracing, similarity, intervention, trajectory, and compute-policy primitives
+- `src/inside_genco/`: tracing, similarity, intervention, trajectory, and compute-policy primitives
 - `scripts/`: asset download, checkpoint evaluation, cross-checkpoint summarization, and environment setup
 - `configs/checkpoints.yaml`: the four evaluated checkpoints and their frozen selections
 - `assets/manifests/`: exact public asset revisions, file sizes, and hashes

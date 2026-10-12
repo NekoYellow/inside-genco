@@ -39,10 +39,10 @@ from baseline import (
 )
 from download_assets import verify
 from research_data import load_selection
-from genco_depth.interventions import InterventionPlan
-from genco_depth.trajectory_metrics import local_step_metrics, node_relative_l2_updates
-from genco_depth.similarity import linear_cka
-from genco_depth.trace import TraceForwardAdapter
+from inside_genco.interventions import InterventionPlan
+from inside_genco.trajectory_metrics import local_step_metrics, node_relative_l2_updates
+from inside_genco.similarity import linear_cka
+from inside_genco.trace import TraceForwardAdapter
 
 
 def write_csv(path: Path, rows: list[dict]) -> None:
