@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "checkpoint": "case118 Base seed 0",
+  "confirmation_conditions": 51,
+  "device": "CPU",
+  "forward_dtype": "float32",
+  "budget_1": {
+    "intervention_selected_step": 8,
+    "cka_selected_step": 11,
+    "intervention_selected_positive_delta_r_inf_mean": 0.017496,
+    "cka_selected_positive_delta_r_inf_mean": 0.022684,
+    "paired_advantage_mean": 0.005187783829962811,
+    "paired_advantage_ci_95": [0.0020223489280185823, 0.007435734573024237],
+    "end_to_end_speedup": 1.096025497665085
+  },
+  "budget_2": {
+    "intervention_selected_steps": [8, 9],
+    "cka_selected_steps": [10, 11],
+    "paired_advantage_mean": 0.0035565112442447777,
+    "paired_advantage_ci_95": [-0.0023526324900436423, 0.008072844856438558],
+    "end_to_end_speedup": 1.188899489083175
+  }
+}

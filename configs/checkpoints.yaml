@@ -1,0 +1,46 @@
+schema_version: 1
+variants:
+  case118_base_seed0:
+    label: case118 Base seed 0
+    network: case118_ieee
+    size: Base
+    seed: 0
+    model_dir: assets/model/case118_ieee/base/seed0
+    raw_dir: assets/data/case118_ieee/raw
+    split: assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json
+    selection: assets/operating-conditions/case118/all.json
+    data_lock: assets/manifests/case118-assets.lock.json
+    model_lock: assets/manifests/case118-assets.lock.json
+  case118_base_seed1:
+    label: case118 Base seed 1
+    network: case118_ieee
+    size: Base
+    seed: 1
+    model_dir: assets/model/case118_ieee/base/seed1
+    raw_dir: assets/data/case118_ieee/raw
+    split: assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json
+    selection: assets/operating-conditions/case118/all.json
+    data_lock: assets/manifests/case118-assets.lock.json
+    model_lock: assets/manifests/cross-network-assets.lock.json
+  case118_small_seed0:
+    label: case118 Small seed 0
+    network: case118_ieee
+    size: Small
+    seed: 0
+    model_dir: assets/model/case118_ieee/small/seed0
+    raw_dir: assets/data/case118_ieee/raw
+    split: assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json
+    selection: assets/operating-conditions/case118/all.json
+    data_lock: assets/manifests/case118-assets.lock.json
+    model_lock: assets/manifests/cross-network-assets.lock.json
+  case30_base_seed0:
+    label: case30 Base seed 0
+    network: case30_ieee
+    size: Base
+    seed: 0
+    model_dir: assets/model/case30_ieee/base/seed0
+    raw_dir: assets/data/case30_ieee/raw
+    split: assets/model/mlflow/eval/case30_ieee/base/seed0/773035d6693e4de8b2114a0dd0b9549a/artifacts/stats/case30_ieee_scenario_splits.json
+    selection: assets/operating-conditions/case30/case30_ieee_all.json
+    data_lock: assets/manifests/cross-network-assets.lock.json
+    model_lock: assets/manifests/cross-network-assets.lock.json

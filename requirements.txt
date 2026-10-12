@@ -1,0 +1,14 @@
+# Inference environment matching the paper branch's torch>=2.7.1,<2.9 range.
+torch==2.8.0
+torch-geometric==2.6.1
+numpy==2.2.6
+pandas==2.3.3
+pyarrow==21.0.0
+PyYAML==6.0.3
+lightning==2.5.5
+pytorch-lightning==2.6.6
+torchmetrics==1.9.0
+matplotlib==3.10.7
+seaborn==0.13.2
+setuptools==80.9.0
+wheel

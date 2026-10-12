@@ -1,0 +1,9 @@
+.cache/
+.venv/
+__pycache__/
+*.py[cod]
+
+assets/data/
+assets/model/
+outputs/
+vendor/gridfm-graphkit/
