@@ -31,20 +31,10 @@ ACTIVITY_THRESHOLDS = (0.01, 0.02, 0.05, 0.10, 0.20)
 def save_figure(fig: plt.Figure, category: str, stem: str) -> list[str]:
     output = ROOT / "figures" / category
     output.mkdir(parents=True, exist_ok=True)
-    paths = []
-    for suffix in ("png", "pdf", "svg"):
-        path = output / f"{stem}.{suffix}"
-        fig.savefig(
-            path,
-            dpi=240 if suffix == "png" else None,
-            bbox_inches="tight",
-            facecolor="white",
-        )
-        if suffix == "svg":
-            path.write_text("\n".join(line.rstrip() for line in path.read_text().splitlines()) + "\n")
-        paths.append(str(path.relative_to(ROOT)))
+    path = output / f"{stem}.png"
+    fig.savefig(path, dpi=240, bbox_inches="tight", facecolor="white")
     plt.close(fig)
-    return paths
+    return [str(path.relative_to(ROOT))]
 
 
 def main() -> None:
