@@ -56,12 +56,7 @@ Each checkpoint run writes:
 - `local_change_vs_importance.csv`: step-level association table
 - `summary.json`: compact checkpoint summary and paired bootstrap intervals
 
-The operator-substitution run replaces the graph Transformer and both node-type
-LayerNorms at target correction `t` with those learned for source correction
-`s`. Corrections 2--12 are shape-compatible, producing an 11×11 matrix. It
-writes condition-level physical metrics, a compact matrix summary, a frozen
-checkpoint hash, and a complete/failed manifest under
-`outputs/operator-substitution/`.
+The operator-substitution run replaces the graph Transformer and both node-type LayerNorms at target correction `t` with those learned for source correction `s`. Corrections 2–12 are shape-compatible, producing an 11×11 matrix. It writes condition-level physical metrics, a compact matrix summary, a frozen checkpoint hash, and a complete/failed manifest under `outputs/operator-substitution/`.
 
 ## Trainable parameter-sharing controls
 
@@ -70,31 +65,7 @@ Two GridFM plugin models are provided without changing vendored upstream code:
 - `GNS_heterogeneous_tied_tail`: correction 1 is independent; corrections 2--12 share one graph operator and both LayerNorms.
 - `GNS_heterogeneous_shared_graph_step_norms`: the same shared graph operator, with separate per-step LayerNorms.
 
-The configs preserve the released case118 Base seed-0 width, correction count,
-losses, optimizer, and epoch budget. Training is intentionally not launched by
-the analysis workflow:
-
-```bash
-PYTHONPATH=src:vendor/gridfm-graphkit \
-  .venv/bin/python -m gridfm_graphkit train \
-  --config configs/tied/case118_tied_tail_seed0.yaml \
-  --plugins inside_genco.tied_tail_plugin \
-  --data_path assets/data \
-  --exp_name inside-genco-tied --run_name strict-seed0
-
-PYTHONPATH=src:vendor/gridfm-graphkit \
-  .venv/bin/python -m gridfm_graphkit train \
-  --config configs/tied/case118_shared_graph_step_norms_seed0.yaml \
-  --plugins inside_genco.tied_tail_plugin \
-  --data_path assets/data \
-  --exp_name inside-genco-tied --run_name step-norms-seed0
-```
-
-Run the original untied config under the same environment and repeat each
-comparison with at least three seeds. A trained tied/untied accuracy claim
-requires identical splits, normalizer, update budget, checkpoint-selection
-metric, and evaluation conditions. `results/parameter-sharing.json` is only
-architecture-level accounting; it is not a trained comparison.
+The matched nine-run protocol preserves the released case118 Base width, correction count, losses, optimizer, and epoch budget. Its fixed-split preparation step, dry-run validation, and long-running commands are documented in [training-controls.md](training-controls.md). Training is intentionally not launched by the analysis workflow. A trained tied/untied accuracy claim requires identical splits, normalizer, update budget, checkpoint-selection metric, precision, and evaluation conditions. `results/parameter-sharing.json` is only architecture-level accounting; it is not a trained comparison.
 
 ## Tests
 

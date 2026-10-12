@@ -1,0 +1,34 @@
+schema_version: 1
+name: case118-stage-specialization
+source_config: assets/model/case118_ieee/base/seed0/case118_ieee_base_seed0.yaml
+source_split_json: assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json
+normalizer_stats: assets/model/case118_ieee/base/seed0/normalizer_stats.pt
+data_path: assets/data
+output_root: outputs/training-controls
+seeds: [0, 1, 2]
+architectures:
+  untied:
+    model_type: GNS_heterogeneous
+  tied_tail:
+    model_type: GNS_heterogeneous_tied_tail
+  shared_graph_step_norms:
+    model_type: GNS_heterogeneous_shared_graph_step_norms
+budget:
+  epochs: 200
+  early_stopping_patience: 201
+checkpoint_selection:
+  monitor: Validation layer_11_residual
+  mode: min
+invariants:
+  corrections: 12
+  hidden_size: 48
+  attention_heads: 8
+  batch_size: 64
+  losses: [LayeredWeightedPhysics, MaskedBusMSE]
+  loss_weights: [0.1, 0.9]
+  optimizer: AdamW
+  learning_rate: 0.0005
+  beta1: 0.9
+  beta2: 0.999
+  lr_decay: 0.7
+  lr_patience: 5

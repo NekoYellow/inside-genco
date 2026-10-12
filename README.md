@@ -64,7 +64,7 @@ done
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The complete workflow, output schema, and expected files are described in [docs/reproducibility.md](docs/reproducibility.md). A concise interpretation appears in [docs/research-summary.md](docs/research-summary.md).
+The complete workflow, output schema, and expected files are described in [docs/reproducibility.md](docs/reproducibility.md). The matched three-architecture, three-seed training protocol is in [docs/training-controls.md](docs/training-controls.md). A concise interpretation appears in [docs/research-summary.md](docs/research-summary.md).
 
 ## Evaluation boundary
 
