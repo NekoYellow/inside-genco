@@ -29,6 +29,8 @@ from inside_genco.compute_policy import (
     random_steps,
     uniformly_spaced_steps,
 )
+from inside_genco.tied_tail import count_unique_parameters, tie_recurrent_tail
+from inside_genco.trace import LayerTrace, _operator_modules
 
 
 class SimilarityTests(unittest.TestCase):
@@ -80,6 +82,19 @@ class InterventionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "multiple edits"):
             InterventionPlan(edits=(edit, edit)).validate(12)
 
+    def test_operator_substitution_rejects_incompatible_or_conflicting_layers(self):
+        InterventionPlan(operator_sources={1: 2, 11: 10}).validate(12)
+        with self.assertRaisesRegex(ValueError, "width-changing layer 0"):
+            InterventionPlan(operator_sources={0: 2}).validate(12)
+        with self.assertRaisesRegex(ValueError, "width-changing layer 0"):
+            InterventionPlan(operator_sources={2: 0}).validate(12)
+        with self.assertRaisesRegex(ValueError, "invalid operator substitution"):
+            InterventionPlan(operator_sources={2: 12}).validate(12)
+        with self.assertRaisesRegex(ValueError, "skipped layer"):
+            InterventionPlan(
+                skip_layers=frozenset({2}), operator_sources={2: 3}
+            ).validate(12)
+
     def test_perturbation_direction_is_keyed_by_step(self):
         reference = torch.ones(3, 4)
         scenarios = torch.tensor([10, 10, 10])
@@ -93,6 +108,92 @@ class InterventionTests(unittest.TestCase):
             node_type="bus", layer_index=2,
         )
         self.assertFalse(torch.equal(first, second))
+
+    def test_operator_substitution_routes_graph_and_both_norms_together(self):
+        model = torch.nn.Module()
+        model.layers = torch.nn.ModuleList([torch.nn.Identity() for _ in range(4)])
+        model.norms_bus = torch.nn.ModuleList(
+            [torch.nn.Identity() for _ in range(4)]
+        )
+        model.norms_gen = torch.nn.ModuleList(
+            [torch.nn.Identity() for _ in range(4)]
+        )
+
+        graph, bus_norm, gen_norm, source = _operator_modules(
+            model, 1, InterventionPlan(operator_sources={1: 3})
+        )
+
+        self.assertEqual(source, 3)
+        self.assertIs(graph, model.layers[3])
+        self.assertIs(bus_norm, model.norms_bus[3])
+        self.assertIs(gen_norm, model.norms_gen[3])
+
+    def test_final_layer_functional_state_excludes_unconsumed_feedback(self):
+        zero = torch.zeros(1, 2)
+        graph = torch.ones(1, 2)
+        propagated = torch.full((1, 2), 2.0)
+        trace = LayerTrace(
+            layer_index=11,
+            display_layer=12,
+            h_in_bus=zero,
+            h_in_gen=zero,
+            h_graph_bus=graph,
+            h_graph_gen=graph,
+            x_bus=None,
+            x_gen=None,
+            p_flow=None,
+            q_flow=None,
+            residual_bus=None,
+            feedback_bus=None,
+            h_out_bus=propagated,
+            h_out_gen=propagated,
+            feedback_used=False,
+            skipped=False,
+            feedback_scale=1.0,
+        )
+
+        self.assertIs(trace.functional_state("bus"), graph)
+        with self.assertRaisesRegex(ValueError, "node_type"):
+            trace.functional_state("branch")
+
+
+class RecurrentTailTests(unittest.TestCase):
+    @staticmethod
+    def model() -> torch.nn.Module:
+        model = torch.nn.Module()
+        model.layers = torch.nn.ModuleList(
+            [torch.nn.Linear(2, 4)]
+            + [torch.nn.Linear(4, 4) for _ in range(3)]
+        )
+        model.norms_bus = torch.nn.ModuleList(
+            [torch.nn.LayerNorm(4) for _ in range(4)]
+        )
+        model.norms_gen = torch.nn.ModuleList(
+            [torch.nn.LayerNorm(4) for _ in range(4)]
+        )
+        return model
+
+    def test_strict_tail_shares_graphs_and_norms_but_not_stem(self):
+        model = self.model()
+        stem = model.layers[0]
+        report = tie_recurrent_tail(model, share_norms=True)
+
+        self.assertIs(model.layers[0], stem)
+        self.assertIs(model.layers[1], model.layers[2])
+        self.assertIs(model.layers[2], model.layers[3])
+        self.assertIs(model.norms_bus[1], model.norms_bus[3])
+        self.assertIs(model.norms_gen[1], model.norms_gen[3])
+        self.assertLess(report.unique_parameters_after, report.unique_parameters_before)
+        self.assertEqual(report.unique_parameters_after, count_unique_parameters(model))
+
+    def test_graph_only_tail_preserves_step_specific_norms(self):
+        model = self.model()
+        bus_norms = list(model.norms_bus)
+        report = tie_recurrent_tail(model, share_norms=False)
+
+        self.assertIs(model.layers[1], model.layers[3])
+        self.assertEqual(list(model.norms_bus), bus_norms)
+        self.assertEqual(report.mode, "shared_graph_step_norms")
 
 
 class TrajectoryMetricTests(unittest.TestCase):

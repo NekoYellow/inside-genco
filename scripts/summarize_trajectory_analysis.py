@@ -41,6 +41,7 @@ def main() -> None:
     config = yaml.safe_load((ROOT / "configs/checkpoints.yaml").read_text())["variants"]
     records = []
     tables = {}
+    physical_tables = {}
     for name in ORDER:
         directory = ROOT / "outputs/trajectory-analysis" / name
         manifest = json.loads((directory / "manifest.json").read_text())
@@ -50,6 +51,8 @@ def main() -> None:
         steps = pd.read_csv(directory / "step_summary.csv")
         association = pd.read_csv(directory / "local_change_vs_importance.csv")
         node_updates = pd.read_csv(directory / "node_updates.csv")
+        physical_metrics = pd.read_csv(directory / "physical_metric_summary.csv")
+        physical_updates = pd.read_csv(directory / "physical_update_summary.csv")
         required_node_columns = {
             "scenario_id", "correction_step", "node_type", "device_id", "update_relative_l2"
         }
@@ -57,7 +60,12 @@ def main() -> None:
             raise ValueError(f"incomplete node-update table: {name}")
         if set(node_updates.correction_step.unique()) != set(range(2, 13)):
             raise ValueError(f"node-update steps are incomplete: {name}")
+        if set(physical_metrics.correction_step.unique()) != set(range(1, 13)):
+            raise ValueError(f"physical-metric steps are incomplete: {name}")
+        if set(physical_updates.correction_step.unique()) != set(range(2, 13)):
+            raise ValueError(f"physical-update steps are incomplete: {name}")
         tables[name] = (summary, steps, association, node_updates)
+        physical_tables[name] = (physical_metrics, physical_updates)
         records.append(
             {
                 "variant": name,
@@ -94,6 +102,18 @@ def main() -> None:
         )
     frame = pd.DataFrame(records)
     frame.to_csv(ROOT / "results/robustness-summary.csv", index=False)
+    physical_result_rows = []
+    for row in records:
+        metrics, updates = physical_tables[row["variant"]]
+        for kind, table in (("solution_quality", metrics), ("adjacent_change", updates)):
+            selected = table.copy()
+            selected.insert(0, "kind", kind)
+            selected.insert(0, "label", row["label"])
+            selected.insert(0, "variant", row["variant"])
+            physical_result_rows.append(selected)
+    pd.concat(physical_result_rows, ignore_index=True).to_csv(
+        ROOT / "results/physical-refinement-summary.csv", index=False
+    )
 
     fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.5))
     for color, row in zip(COLORS, records):
@@ -143,6 +163,68 @@ def main() -> None:
     axes[1].legend(frameon=False)
     fig.tight_layout()
     trajectory_figures = save_figure(fig, "trajectories", "cross_checkpoint_trajectory_and_cka")
+
+    primary_metrics, primary_physical_updates = physical_tables[ORDER[0]]
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.6), constrained_layout=True)
+    mismatch = primary_metrics[
+        primary_metrics.metric.isin(("p_mae_all_bus_MW", "q_mae_all_bus_Mvar"))
+    ]
+    for metric, label, color in (
+        ("p_mae_all_bus_MW", "Active mismatch (MW)", "#264653"),
+        ("q_mae_all_bus_Mvar", "Reactive mismatch (Mvar)", "#e76f51"),
+    ):
+        selected = mismatch[mismatch.metric == metric].sort_values("correction_step")
+        axes[0].plot(
+            selected.correction_step,
+            selected["median"],
+            marker="o",
+            linewidth=1.8,
+            label=label,
+            color=color,
+        )
+    axes[0].set(
+        xlabel="Correction step",
+        ylabel="Median absolute bus mismatch",
+        yscale="log",
+        xticks=range(1, 13),
+        title="Physical feasibility keeps improving",
+    )
+    axes[0].legend(frameon=False)
+
+    movement_specs = (
+        ("vm_step_mae_pu", r"$V_m$", "#264653"),
+        ("va_step_mae_rad", r"$V_a$", "#2a9d8f"),
+        ("pg_bus_step_mae_MW", r"bus $P_g$", "#e9c46a"),
+        ("qg_bus_step_mae_Mvar", r"bus $Q_g$", "#e76f51"),
+        ("pg_gen_step_mae_MW", r"generator $P_g$", "#7b2cbf"),
+    )
+    for metric, label, color in movement_specs:
+        selected = primary_physical_updates[
+            primary_physical_updates.metric == metric
+        ].sort_values("correction_step")
+        values = selected["median"].to_numpy(float)
+        axes[1].plot(
+            selected.correction_step,
+            values / values[0],
+            marker="o",
+            linewidth=1.6,
+            label=label,
+            color=color,
+        )
+    axes[1].set(
+        xlabel="Correction step",
+        ylabel="Median adjacent change / correction-2 change",
+        yscale="log",
+        xticks=range(2, 13),
+        title="Physical updates shrink without vanishing",
+    )
+    axes[1].legend(frameon=False, ncol=2, fontsize=9)
+    for ax in axes:
+        ax.grid(color="#e5e7eb", linewidth=0.65)
+        ax.spines[["top", "right"]].set_visible(False)
+    physical_figures = save_figure(
+        fig, "trajectories", "physical_refinement_trajectory"
+    )
 
     fig, axes = plt.subplots(2, 2, figsize=(10.2, 8.2), constrained_layout=True)
     for ax, color, row in zip(axes.ravel(), COLORS, records):
@@ -355,13 +437,17 @@ def main() -> None:
             "late_steps": [7, 8, 9, 10, 11],
         },
         "node_activity": {
-            "definition": "per-node ||h_out-h_in||_2 / (||h_in||_2 + 1e-12)",
+            "definition": (
+                "per-node ||h_functional-h_in||_2 / (||h_in||_2 + 1e-12); "
+                "h_functional is h_out for steps 2-11 and h_graph/readout for step 12"
+            ),
             "steps": list(range(2, 13)),
             "thresholds": list(ACTIVITY_THRESHOLDS),
             "summary_csv": "results/node-activity-summary.csv",
         },
         "figures": (
             trajectory_figures
+            + physical_figures
             + importance_figures
             + direct_importance_figures
             + activity_fraction_figures

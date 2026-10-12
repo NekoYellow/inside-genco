@@ -1,98 +1,102 @@
-# Research summary: Inside GENCO's 12 correction steps
+# Inside GENCO: Stage-Specific Computation in a Learned Physics Solver
 
-> **Core finding — A correction can remain functionally important even when its representation barely changes.**
+GENCO solves power flow through a sequence of 12 corrections. Although the output heads, physics decoder, and residual-to-latent feedback MLP are shared across steps, each correction has its own graph Transformer and bus/generator LayerNorm parameters. An obvious alternative would be to apply a single shared correction block recurrently after the initial width-changing stem. Such a design would be more parameter-efficient and could, in principle, support a flexible number of refinement steps. This contrast motivates our central question: does GENCO merely apply a stationary correction rule to a changing state, or **has it learned a stage-specific correction process in which different depths perform distinct refinement functions?**
 
-## Problem
+This question separates into three testable parts:
 
-GENCO produces a power-flow solution through 12 consecutive corrections. We study two questions:
+1. Do latent representations and physical variables converge at the same time?
+2. Does small local representation change imply that a correction is functionally unimportant?
+3. Are the correction blocks learned at shape-compatible depths interchangeable?
 
-1. How do the hidden states and intermediate physical solutions evolve across the 12 corrections?
-2. How well do representation geometry and direct update size predict a correction's contribution to the final solution?
+The third question is essential. Different behavior at different depths does not by itself demonstrate parameter specialization, because a shared operator can produce different effects on different input states.
 
-## Method
+## Mechanistic evidence overview
 
-Our primary experiment uses the released case118 Base, seed 0 checkpoint on 115 operating conditions from one fixed-connectivity family. We repeat the analysis with case118 Base seed 1, case118 Small seed 0, and case30 Base seed 0. The two case118 controls use the same 115 conditions. The case30 control uses 115 conditions from one fixed-connectivity family. Base has hidden width 48; Small has hidden width 24.
+```text
+GENCO's 12-correction process
+            │
+            ▼
+Do latent and physical states converge together?
+            │
+            ▼
+No: latent geometry stabilizes before physical feasibility
+            │
+            ▼
+Does latent stability imply low functional importance?
+            │
+            ▼
+No: late corrections still improve the final physical solution
+            │
+            ▼
+Are correction blocks interchangeable across depth?
+            │
+            ▼
+No: cross-step substitution consistently damages the solution
+            │
+            ▼
+GENCO learned a sequence of specialized refinement stages
+```
 
-Each correction contains one graph-transformer update, followed by physical-solution decoding and a power-balance feedback update. We record the bus and generator hidden states, decoded voltages and branch flows, and bus power imbalance after every correction.
+## Evidence 1: latent stabilization precedes physical convergence
 
-We summarize physical feasibility with `R∞`, the largest active- or reactive-power imbalance at any bus on a 100 MVA base. Linear CKA measures the similarity of representation geometry. A separate direct relative update measures vector movement:
+The primary experiment uses the released case118 Base seed-0 checkpoint on 115 fixed-connectivity operating conditions. Controls cover case118 Base seed 1, case118 Small seed 0, and case30 Base seed 0, each on 115 conditions.
 
-`||Hout − Hin||F / (||Hin||F + ε)`.
+![Step-wise physical refinement](../figures/trajectories/physical_refinement_trajectory.png)
 
-For cross-correction CKA, we subtract each node's mean feature over operating conditions to focus the comparison on operating-state variation after controlling for stable node identity.
+*Figure 1 — Median active/reactive bus mismatch and adjacent decoded-variable movement for case118 Base seed 0. Adjacent movements are normalized by their correction-2 medians, and absolute values are retained in the result table.*
 
-For the second question, the CKA-based local score is `1 − CKA` between the input and output bus states of one correction during normal inference. We ablate corrections 2–11 one at a time by replacing the complete correction with an identity map on both bus and generator states. This skips its graph Transformer, solution readout, branch-flow and physics decoding, power-balance residual, and encoded feedback. Correction 1 changes hidden width, while correction 12 owns the returned readout. The measured damage is the response of the **remaining correction chain**, including the effect of downstream distribution shift.
+For case118 Base seed 0, median maximum power-balance residual falls from **23.6794** after correction 1 to **1.1603** after correction 2, **0.07267** after correction 7, and **0.003134** after correction 12. Median active bus mismatch falls from **1.152 MW** after correction 7 to **0.0885 MW** after correction 12; reactive mismatch falls from **0.2268 Mvar** to **0.00973 Mvar**. Voltage and bus-injection movements shrink strongly, while generator active-power adjustments remain stage-dependent rather than decaying monotonically.
 
-All trajectory, direct-update, and ablation summaries use 115 operating conditions per checkpoint. Overall rank associations contain 10 step-level observations (corrections 2–11); late-stage associations contain five (7–11). We use 2,000 paired bootstrap resamples of operating conditions to quantify how ablation-damage ranks change, keeping pooled CKA fixed and recomputing direct-update summaries within each resample.
+![Cross-correction CKA](../figures/representations/cka_multiview_heatmaps.png)
 
-## 1. How do the hidden states and physical solution evolve?
+*Figure 2 — Pairwise CKA between corrections for the primary checkpoint, before and after removing each node's mean feature.*
 
-![Power-balance residual across the 12 corrections](../figures/trajectories/physical_residual_trajectory.png)
+The bus representation enters a high-similarity regime over corrections 7–12. Mean off-diagonal node-centered CKA is **0.9957** for buses, while generator CKA is **0.9118**. The latent representation geometry therefore stabilizes before physical feasibility has converged.
 
-*Figure 1 — Median and P95 bus power imbalance after each correction for case118 Base seed 0.*
+![Cross-checkpoint trajectory](../figures/trajectories/cross_checkpoint_trajectory_and_cka.png)
 
-For case118 Base seed 0, the median `R∞` falls from **23.6794** after correction 1 to **1.1603** after correction 2, then reaches **0.4193** after correction 4, **0.02649** after correction 8, and **0.003134** after correction 12. The first corrections make the large adjustment; the remaining corrections refine the solution.
+*Figure 3 — Median physical trajectory and late node-centered CKA for four released checkpoints.*
 
-Across individual operating conditions, **55 of 115** contain at least one adjacent increase in `R∞`. These temporary increases occur inside trajectories that reach a lower final error.
+The coarse-to-fine physical trajectory and late bus-similarity regime recur across seeds, model widths, and network sizes. Generator behavior and temporary non-monotonicity vary more across checkpoints.
 
-![Cross-correction CKA for bus and generator hidden states](../figures/representations/cka_multiview_heatmaps.png)
+## Evidence 2: local change cannot imply importance
 
-*Figure 2 — Pairwise CKA between correction steps for case118 Base seed 0, before and after removing each node's mean feature.*
+Corrections 2–11 are bypassed one at a time as complete computational units: graph update, readout, physics decoding, residual, and feedback. Correction 1 cannot be bypassed because it changes latent width, while correction 12 owns the returned readout. Bypass damage therefore measures a correction's contribution within the remaining computation chain rather than the standalone quality of an isolated block.
 
-Bus representations change substantially in the early corrections and form a high-similarity block over corrections 7–12. After node centering, the mean off-diagonal CKA within this block is **0.9957** for buses. Generator states remain more dynamic over the same corrections, with a mean CKA of **0.9118**.
+![Representation change versus bypass damage](../figures/interventions/representation_change_vs_importance.png)
 
-![Trajectory and late-state CKA across checkpoints](../figures/trajectories/cross_checkpoint_trajectory_and_cka.png)
+*Figure 4 — CKA geometry change along the normal trajectory versus final physical damage from a whole-correction bypass.*
 
-*Figure 3 — Median physical trajectory and steps 7–12 node-centered CKA for the four checkpoints.*
+Across the full corrections 2–11 trajectory, CKA change and bypass damage are strongly associated in all four checkpoints. In the primary checkpoint, their step-level Spearman correlation is **0.855**. Restricted to late corrections 7–11, however, it falls to **0.10**: correction 11 has the smallest CKA change, whereas correction 8 has the smallest bypass damage.
 
-The coarse-to-fine pattern repeats in the three added controls. Their median `R∞` also decreases across all 12 corrections, and their late bus CKA ranges from **0.9986** to **0.9996**. The generator result varies more: late generator CKA is **0.7173** for case118 Base seed 1, **0.8624** for case118 Small seed 0, and **0.9777** for case30 Base seed 0. The number of conditions with at least one temporary worsening is **55**, **68**, **97**, and **62** in the four variants, respectively.
+We may thus conclude that, CKA captures correction importance over the global trajectory but fails as a local late-stage criterion in the primary checkpoint.
 
-The repeated feature is a late regime with stable bus-state geometry and continued physical refinement. The generator trajectory and the frequency of non-monotone updates depend on the checkpoint and network.
+## Evidence 3: correction operators are stage-specialized
 
-To distinguish stable geometry from small node-wise movement, we also measure `||h_out−h_in||2/(||h_in||2+ε)` for every node and report the fraction above a threshold `τ` over corrections 2–12.
+For every target correction `t` and source correction `s` in 2–12, the operator-substitution experiment runs the normal chain while replacing the target's graph Transformer and both LayerNorms with those learned at the source depth. The diagonal is the unchanged checkpoint. This intervention preserves the state arriving at depth `t` and directly tests whether similar latent geometry also implies correction-block interchangeability.
 
-![Node activity across thresholds in the primary checkpoint](../figures/node-activity/node_activity_fraction.png)
+![Cross-correction operator substitution](../figures/operators/operator_substitution_matrix.png)
 
-*Figure 4a — Fractions of bus and generator nodes above each relative-update threshold for case118 Base seed 0.*
+*Figure 5 — Mean final residual damage when the target correction uses the source correction's graph Transformer and LayerNorms. Gray diagonal cells are the unchanged checkpoint; off-diagonal damage is shown on a logarithmic scale.*
 
-At correction 10, whole-step bus CKA is already **0.999794**, while **98.9%** of bus nodes still move by more than `0.05`. At correction 11, CKA reaches **0.999948** and the corresponding fraction is still **62.3%**. High CKA therefore records preservation of representation geometry rather than node-wise immobility. The fraction falls to **32.8%** at correction 12. Every generator update in corrections 7–12 exceeds `0.20` in the same checkpoint, so bus and generator states follow different late-stage trajectories.
+The unchanged diagonal is best for **11/11** targets. Every one of the **110** off-diagonal substitutions increases mean final residual: the smallest increase is **0.0105 p.u.**, the median is **0.371 p.u.**, and the maximum is **34.54 p.u.** Even neighboring late correction blocks are not freely interchangeable. This provides evidence that the released graph operators and normalization parameters jointly acquired stage-specific functions.
 
-![Node activity across steps, thresholds, and checkpoints](../figures/node-activity/node_activity_threshold_heatmap.png)
+This result supports functional specialization within the released untied checkpoint.
 
-*Figure 4b — Color shows the fraction of bus nodes above each relative-update threshold.*
+## Final-step semantics
 
-All four checkpoints shift toward smaller late-stage bus updates, but their absolute scales differ. At `τ=0.05`, the correction-12 fractions are **32.8%**, **0%**, **0%**, and **28.4%** for case118 Base seed 0, Base seed 1, Small seed 0, and case30 Base seed 0. A fixed threshold therefore does not select the same large-update regime across checkpoints.
+At correction 12, the graph update and readout affect the returned prediction, but the subsequently computed feedback is never consumed. Node activity at this step is therefore measured from `h_in` to the graph/readout state `h_graph`; the dead feedback state is excluded. For corrections 2–11, the functional endpoint remains the propagated `h_out` state.
 
-![Per-device update magnitudes in the primary checkpoint](../figures/node-activity/node_activity_by_device.png)
+## Parameter-sharing implication and remaining test
 
-*Figure 4c — Median relative update for each stable bus and generator identity over 115 conditions.*
+The released case118 Base model has **20,069,187** unique parameters. If correction 1 remains independent while corrections 2–12 share correction 2's graph operator and both LayerNorms, the same 12-call computation graph has **2,094,147** unique parameters, a **9.58×** reduction. Sharing the graph operator while retaining step-specific LayerNorms gives **2,109,507** parameters.
 
-The spatial ordering is much more reproducible than the thresholded fraction. For the three case118 checkpoints, pairwise Spearman correlations between per-bus median update magnitudes range from **0.912 to 0.981** at correction 11 and from **0.972 to 0.981** at correction 12. Within each checkpoint, the median correction-12 update is higher for PQ buses than for PV buses; the single REF bus lies below both groups. Late bus refinement is therefore spatially structured. Bus role is one possible contributor to this ordering, but the present observation does not establish causality.
+These counts show that depth-specific parameterization is a substantive design decision, but they do not show that it trains better. Establishing an accuracy–parameter tradeoff requires matched training of the original untied model, a strict recurrent-tail model, and a shared-graph model with step-specific LayerNorms, using identical data splits, losses, optimization budgets, checkpoint-selection rules, and at least three seeds.
 
-## 2. How does local change relate to correction importance?
+## Supplementary compute-policy result
 
-![Local representation change and ablation effect across checkpoints](../figures/interventions/representation_change_vs_importance.png)
-
-*Figure 5 — Each panel compares CKA geometry change during the normal trajectory with the final physical error introduced by ablating one correction.*
-
-Across corrections 2–11, CKA geometry change and ablation effect are strongly related in all four variants. Their step-level Spearman correlations are **0.855**, **0.927**, **0.952**, and **0.988** for case118 Base seed 0, case118 Base seed 1, case118 Small seed 0, and case30 Base seed 0. Operating-condition bootstrap intervals are respectively **[0.855, 0.867]**, **[0.927, 0.939]**, **[0.903, 0.952]**, and **[0.976, 0.988]**. These intervals quantify damage-rank stability conditional on each pooled CKA score; the independent step-level sample size remains ten.
-
-Late-stage ranking tells a different story. In case118 Base seed 0, correction 11 has the smallest CKA change, while correction 8 has the smallest ablation effect. From correction 8 to correction 11, `1 − CKA` falls from **0.00434** to **0.0000524**, while the mean final `R∞` increases are **0.01669**, **0.01827**, **0.02495**, and **0.02169**. Restricted to corrections 7–11, Spearman drops to **0.10** with a conditional bootstrap interval of **[0.10, 0.20]**. The large early-step effects account for most of the full-chain correlation; late-step selection benefits from intervention evidence.
-
-![Direct hidden-state update and ablation effect across checkpoints](../figures/interventions/direct_update_vs_importance.png)
-
-*Figure 6 — Direct relative bus-state update norm versus ablation damage, separating vector movement from CKA geometry.*
-
-Direct distance yields the same pattern. In case118 Base seed 0, the median relative bus update falls from **0.2165** at correction 8 to **0.0501** at correction 11—a **4.3×** reduction—while ablation damage rises from **0.01669** to **0.02169**. Among the 29 operating conditions in the smallest-update quartile at correction 11, **29/29** have positive damage, with median `ΔR∞ = 0.02086`. Across all ten corrections, direct-update/damage Spearman values are **0.855**, **0.976**, **1.000**, and **0.988**; for corrections 7–11 they are **0.10**, **0.90**, **1.00**, and **0.90**. The late-stage mismatch is strongest in the primary checkpoint.
-
-Local change describes the stability of the current representation. Ablation damage captures the correction's value to the remaining computation chain.
-
-## Practical check: selecting a correction under a fixed budget
-
-We tested this implication under a separate frozen exploration/confirmation protocol. With one skipped correction, CKA selects correction 11, while exploration-side intervention damage selects correction 8. On 51 untouched confirmation conditions, mean positive `ΔR∞` is **0.02268** for the CKA choice and **0.01750** for the intervention-guided choice; the paired advantage is **0.00519**, 95% CI **[0.00202, 0.00744]**. Both execute 11 corrections and the intervention-guided path gives **1.10×** measured end-to-end speedup. With two skipped corrections, the global-versus-local advantage interval crosses zero, indicating material interaction between corrections.
-
-For the studied checkpoint, functional intervention provides the stronger single-step selection signal. Operational early exit would additionally require per-condition control and safety validation.
+A frozen exploration/confirmation experiment compares single-correction skip choices. On 51 untouched confirmation conditions, the intervention-guided choice has lower mean positive final residual damage than the CKA choice. This is useful supplementary evidence about the limitation of local similarity, but early stopping and compute reduction are not the main claim.
 
 ## Conclusion
 
-Across two seeds, two model widths, and two network sizes, the studied GENCO checkpoints follow a coarse-to-fine physical trajectory and enter a late regime with highly similar bus-state geometry. That geometry can remain nearly unchanged while most bus nodes still move, and the late update magnitudes form a reproducible spatial ordering on the same grid. Generator states follow a separate trajectory. CKA and direct update norms track functional importance across the full correction chain; the primary checkpoint shows that this ordering can disappear among late corrections. A correction may remain functionally important after its representation has nearly stabilized.
+The evidence suggests that GENCO's 12 corrections are not interchangeable iterations of a stationary operator, but a learned sequence of specialized refinement stages. Bus latent geometry stabilizes before physical feasibility converges; late corrections can remain functionally important despite small representational change; and replacing a correction block with one learned at another depth consistently damages the final solution. The remaining matched-training experiment will determine whether this specialization also yields a better accuracy–parameter tradeoff than recurrent sharing.

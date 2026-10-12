@@ -49,9 +49,9 @@ case118_base_seed0,case118 Base seed 0,bus,11,0.02,1.0,1.0,1.0,1.0,115,118
 case118_base_seed0,case118 Base seed 0,bus,11,0.05,0.6232866617538688,0.6271186440677966,0.5203389830508475,0.6949152542372882,115,118
 case118_base_seed0,case118 Base seed 0,bus,11,0.1,0.0,0.0,0.0,0.0,115,118
 case118_base_seed0,case118 Base seed 0,bus,11,0.2,0.0,0.0,0.0,0.0,115,118
-case118_base_seed0,case118 Base seed 0,bus,12,0.01,1.0,1.0,1.0,1.0,115,118
-case118_base_seed0,case118 Base seed 0,bus,12,0.02,1.0,1.0,1.0,1.0,115,118
-case118_base_seed0,case118 Base seed 0,bus,12,0.05,0.32829771554900516,0.3389830508474576,0.23474576271186443,0.3923728813559322,115,118
+case118_base_seed0,case118 Base seed 0,bus,12,0.01,0.9955047899778924,1.0,0.9830508474576272,1.0,115,118
+case118_base_seed0,case118 Base seed 0,bus,12,0.02,0.00899042004421518,0.00847457627118644,0.0,0.03389830508474576,115,118
+case118_base_seed0,case118 Base seed 0,bus,12,0.05,0.0,0.0,0.0,0.0,115,118
 case118_base_seed0,case118 Base seed 0,bus,12,0.1,0.0,0.0,0.0,0.0,115,118
 case118_base_seed0,case118 Base seed 0,bus,12,0.2,0.0,0.0,0.0,0.0,115,118
 case118_base_seed0,case118 Base seed 0,gen,2,0.01,1.0,1.0,1.0,1.0,115,54
@@ -159,8 +159,8 @@ case118_base_seed1,case118 Base seed 1,bus,11,0.02,0.9035372144436256,0.91525423
 case118_base_seed1,case118 Base seed 1,bus,11,0.05,0.0,0.0,0.0,0.0,115,118
 case118_base_seed1,case118 Base seed 1,bus,11,0.1,0.0,0.0,0.0,0.0,115,118
 case118_base_seed1,case118 Base seed 1,bus,11,0.2,0.0,0.0,0.0,0.0,115,118
-case118_base_seed1,case118 Base seed 1,bus,12,0.01,1.0,1.0,1.0,1.0,115,118
-case118_base_seed1,case118 Base seed 1,bus,12,0.02,0.8742078113485628,0.8813559322033898,0.7966101694915254,0.9322033898305084,115,118
+case118_base_seed1,case118 Base seed 1,bus,12,0.01,0.0044952100221075895,0.0,0.0,0.011016949152542348,115,118
+case118_base_seed1,case118 Base seed 1,bus,12,0.02,0.0,0.0,0.0,0.0,115,118
 case118_base_seed1,case118 Base seed 1,bus,12,0.05,0.0,0.0,0.0,0.0,115,118
 case118_base_seed1,case118 Base seed 1,bus,12,0.1,0.0,0.0,0.0,0.0,115,118
 case118_base_seed1,case118 Base seed 1,bus,12,0.2,0.0,0.0,0.0,0.0,115,118
@@ -269,8 +269,8 @@ case118_small_seed0,case118 Small seed 0,bus,11,0.02,0.8442151805453206,0.847457
 case118_small_seed0,case118 Small seed 0,bus,11,0.05,0.0,0.0,0.0,0.0,115,118
 case118_small_seed0,case118 Small seed 0,bus,11,0.1,0.0,0.0,0.0,0.0,115,118
 case118_small_seed0,case118 Small seed 0,bus,11,0.2,0.0,0.0,0.0,0.0,115,118
-case118_small_seed0,case118 Small seed 0,bus,12,0.01,0.9996315401621223,1.0,1.0,1.0,115,118
-case118_small_seed0,case118 Small seed 0,bus,12,0.02,0.8043478260869565,0.8050847457627118,0.7372881355932204,0.8389830508474576,115,118
+case118_small_seed0,case118 Small seed 0,bus,12,0.01,0.0010316875460574797,0.0,0.0,0.00847457627118644,115,118
+case118_small_seed0,case118 Small seed 0,bus,12,0.02,0.0,0.0,0.0,0.0,115,118
 case118_small_seed0,case118 Small seed 0,bus,12,0.05,0.0,0.0,0.0,0.0,115,118
 case118_small_seed0,case118 Small seed 0,bus,12,0.1,0.0,0.0,0.0,0.0,115,118
 case118_small_seed0,case118 Small seed 0,bus,12,0.2,0.0,0.0,0.0,0.0,115,118
@@ -379,9 +379,9 @@ case30_base_seed0,case30 Base seed 0,bus,11,0.02,1.0,1.0,1.0,1.0,115,30
 case30_base_seed0,case30 Base seed 0,bus,11,0.05,0.30898550724637686,0.3333333333333333,0.2,0.36666666666666664,115,30
 case30_base_seed0,case30 Base seed 0,bus,11,0.1,0.0,0.0,0.0,0.0,115,30
 case30_base_seed0,case30 Base seed 0,bus,11,0.2,0.0,0.0,0.0,0.0,115,30
-case30_base_seed0,case30 Base seed 0,bus,12,0.01,1.0,1.0,1.0,1.0,115,30
-case30_base_seed0,case30 Base seed 0,bus,12,0.02,1.0,1.0,1.0,1.0,115,30
-case30_base_seed0,case30 Base seed 0,bus,12,0.05,0.28434782608695647,0.3,0.2,0.36666666666666664,115,30
+case30_base_seed0,case30 Base seed 0,bus,12,0.01,0.6828985507246377,0.6666666666666666,0.6233333333333333,0.7433333333333332,115,30
+case30_base_seed0,case30 Base seed 0,bus,12,0.02,0.0,0.0,0.0,0.0,115,30
+case30_base_seed0,case30 Base seed 0,bus,12,0.05,0.0,0.0,0.0,0.0,115,30
 case30_base_seed0,case30 Base seed 0,bus,12,0.1,0.0,0.0,0.0,0.0,115,30
 case30_base_seed0,case30 Base seed 0,bus,12,0.2,0.0,0.0,0.0,0.0,115,30
 case30_base_seed0,case30 Base seed 0,gen,2,0.01,1.0,1.0,1.0,1.0,115,6

@@ -162,6 +162,21 @@ def to_metric_dtype(batch, dtype):
     return batch.clone().apply(lambda t: t.to(dtype=dtype) if t.is_floating_point() else t)
 
 
+def physicalize_output(output, batch, normalizer, metric_dtype='float32'):
+    """Return cloned inputs and predictions converted to physical units."""
+
+    import torch
+
+    if metric_dtype == 'float64':
+        batch = to_metric_dtype(batch, torch.float64)
+        output = {k: v.to(dtype=torch.float64) for k, v in output.items()}
+    physical = batch.clone()
+    physical_output = {k: v.clone() for k, v in output.items()}
+    normalizer.inverse_transform(physical)
+    normalizer.inverse_output(physical_output, physical)
+    return physical_output, physical
+
+
 def scenario_metrics(output, batch, normalizer, groups, topologies, metric_dtype='float32'):
     import torch
     from gridfm_graphkit.datasets.globals import VM_H, VA_H, VM_OUT, VA_OUT
@@ -171,10 +186,7 @@ def scenario_metrics(output, batch, normalizer, groups, topologies, metric_dtype
         batch = to_metric_dtype(batch, torch.float64)
         output = {k:v.to(dtype=torch.float64) for k,v in output.items()}
     normalized_p, normalized_q = residuals(output, batch)
-    physical = batch.clone()
-    physical_output = {k: v.clone() for k, v in output.items()}
-    normalizer.inverse_transform(physical)
-    normalizer.inverse_output(physical_output, physical)
+    physical_output, physical = physicalize_output(output, batch, normalizer)
     p, q = residuals(physical_output, physical)
     # FP32 cross-check of the two unit-conversion routes. Record the discrepancy.
     discrepancy = torch.maximum((p - normalized_p * normalizer.baseMVA).abs().max(),

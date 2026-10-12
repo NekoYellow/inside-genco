@@ -33,6 +33,7 @@ from baseline import (
     load_model,
     load_splits,
     model_state_sha256,
+    physicalize_output,
     plan_partitions,
     scenario_metrics,
     sha256,
@@ -43,6 +44,20 @@ from inside_genco.interventions import InterventionPlan
 from inside_genco.trajectory_metrics import local_step_metrics, node_relative_l2_updates
 from inside_genco.similarity import linear_cka
 from inside_genco.trace import TraceForwardAdapter
+
+
+PHYSICAL_METRICS = (
+    "vm_mae_pu",
+    "vm_max_pu",
+    "vm_ref_mae_pu",
+    "va_mae_rad",
+    "va_max_rad",
+    "r_inf_pu_100MVA",
+    "p_mae_all_bus_MW",
+    "q_mae_all_bus_Mvar",
+    "pbe_mean_MVA",
+    "pbe_max_MVA",
+)
 
 
 def write_csv(path: Path, rows: list[dict]) -> None:
@@ -76,6 +91,77 @@ def rows_by_scenario(rows: list[dict]) -> dict[int, dict]:
     if len(result) != len(rows):
         raise ValueError("scenario metrics are not unique")
     return result
+
+
+def physical_step_change_rows(
+    previous: dict[str, torch.Tensor],
+    current: dict[str, torch.Tensor],
+    batch,
+    correction_step: int,
+) -> list[dict]:
+    """Measure decoded physical movement between adjacent corrections."""
+
+    from gridfm_graphkit.datasets.globals import (
+        PG_OUT,
+        PG_OUT_GEN,
+        QG_OUT,
+        VA_OUT,
+        VM_OUT,
+    )
+
+    rows = []
+    for graph_index, scenario_id in enumerate(batch.scenario_id.tolist()):
+        nodes = batch["bus"].batch == graph_index
+        generators = batch["gen"].batch == graph_index
+        ref = nodes & batch.mask_dict["REF"]
+        nonref = nodes & ~batch.mask_dict["REF"]
+        if ref.sum() != 1:
+            raise ValueError(f"expected one reference bus for scenario {scenario_id}")
+
+        bus_delta = current["bus"] - previous["bus"]
+        vm = bus_delta[nodes, VM_OUT].abs()
+        angle = bus_delta[:, VA_OUT] - bus_delta[ref, VA_OUT][0]
+        angle = torch.atan2(torch.sin(angle), torch.cos(angle))[nonref].abs()
+        pg_bus = bus_delta[nodes, PG_OUT].abs()
+        qg_bus = bus_delta[nodes, QG_OUT].abs()
+        pg_gen = (
+            current["gen"][generators, PG_OUT_GEN]
+            - previous["gen"][generators, PG_OUT_GEN]
+        ).abs()
+        rows.append(
+            {
+                "scenario_id": int(scenario_id),
+                "correction_step": int(correction_step),
+                "vm_step_mae_pu": float(vm.mean()),
+                "vm_step_max_pu": float(vm.max()),
+                "va_step_mae_rad": float(angle.mean()),
+                "va_step_max_rad": float(angle.max()),
+                "pg_bus_step_mae_MW": float(pg_bus.mean()),
+                "qg_bus_step_mae_Mvar": float(qg_bus.mean()),
+                "pg_gen_step_mae_MW": float(pg_gen.mean()),
+            }
+        )
+    return rows
+
+
+def summarize_metrics(frame: pd.DataFrame, metrics: tuple[str, ...]) -> pd.DataFrame:
+    """Return a stable long-form step summary for multiple metrics."""
+
+    long = frame.melt(
+        id_vars=["correction_step"],
+        value_vars=list(metrics),
+        var_name="metric",
+        value_name="value",
+    )
+    return (
+        long.groupby(["correction_step", "metric"])["value"]
+        .agg(
+            median="median",
+            p95=lambda values: float(np.quantile(values, 0.95)),
+            mean="mean",
+        )
+        .reset_index()
+    )
 
 
 def rank_correlation(left: np.ndarray, right: np.ndarray) -> float:
@@ -260,6 +346,7 @@ def main() -> None:
             for node in ("bus", "gen")
         }
         physical_rows: list[dict] = []
+        physical_update_rows: list[dict] = []
         ablation_rows: list[dict] = []
         local_update_rows: list[dict] = []
         node_update_rows: list[dict] = []
@@ -279,6 +366,7 @@ def main() -> None:
                     trace.output, batch, normalizer, groups, topologies, "float64"
                 )
                 baseline_by_id = rows_by_scenario(baseline_rows)
+                previous_physical_output = None
 
                 for node in ("bus", "gen"):
                     keys, device_ids = stable_rows(batch, node)
@@ -303,31 +391,76 @@ def main() -> None:
                             {
                                 "scenario_id": int(row["scenario_id"]),
                                 "correction_step": layer.display_layer,
-                                "r_inf_pu_100MVA": float(row["r_inf_pu_100MVA"]),
+                                **{metric: float(row[metric]) for metric in PHYSICAL_METRICS},
                             }
                         )
+                    physical_output, _ = physicalize_output(
+                        {"bus": layer.x_bus, "gen": layer.x_gen},
+                        batch,
+                        normalizer,
+                        "float64",
+                    )
+                    if previous_physical_output is not None:
+                        physical_update_rows.extend(
+                            physical_step_change_rows(
+                                previous_physical_output,
+                                physical_output,
+                                batch,
+                                layer.display_layer,
+                            )
+                        )
+                    previous_physical_output = physical_output
                     if layer.layer_index > 0:
                         for node_type in ("bus", "gen"):
                             node_batch = batch[node_type].batch.detach().cpu()
                             node_scenarios = batch.scenario_id.detach().cpu()[node_batch]
                             node_devices = batch[node_type].device_id.detach().cpu()
-                            relative_updates = node_relative_l2_updates(
+                            graph_updates = node_relative_l2_updates(
                                 getattr(layer, f"h_in_{node_type}"),
-                                getattr(layer, f"h_out_{node_type}"),
+                                getattr(layer, f"h_graph_{node_type}"),
                             ).cpu()
+                            functional_updates = node_relative_l2_updates(
+                                getattr(layer, f"h_in_{node_type}"),
+                                layer.functional_state(node_type),
+                            ).cpu()
+                            if layer.feedback_used:
+                                propagated_updates = node_relative_l2_updates(
+                                    getattr(layer, f"h_in_{node_type}"),
+                                    getattr(layer, f"h_out_{node_type}"),
+                                ).cpu()
+                                feedback_updates = node_relative_l2_updates(
+                                    getattr(layer, f"h_graph_{node_type}"),
+                                    getattr(layer, f"h_out_{node_type}"),
+                                ).cpu()
+                            else:
+                                propagated_updates = feedback_updates = None
                             node_update_rows.extend(
                                 {
                                     "scenario_id": int(scenario_id),
                                     "correction_step": layer.display_layer,
                                     "node_type": node_type,
                                     "device_id": int(device_id),
-                                    "update_relative_l2": float(relative_update),
+                                    "update_relative_l2": float(functional_update),
+                                    "functional_update_relative_l2": float(functional_update),
+                                    "graph_update_relative_l2": float(graph_update),
+                                    "propagated_update_relative_l2": (
+                                        None if propagated_updates is None
+                                        else float(propagated_updates[row_index])
+                                    ),
+                                    "feedback_update_relative_l2": (
+                                        None if feedback_updates is None
+                                        else float(feedback_updates[row_index])
+                                    ),
+                                    "update_endpoint": (
+                                        "h_out" if layer.feedback_used else "h_graph_readout"
+                                    ),
                                 }
-                                for scenario_id, device_id, relative_update in zip(
+                                for row_index, (scenario_id, device_id, functional_update, graph_update) in enumerate(zip(
                                     node_scenarios.tolist(),
                                     node_devices.tolist(),
-                                    relative_updates.tolist(),
-                                )
+                                    functional_updates.tolist(),
+                                    graph_updates.tolist(),
+                                ))
                             )
                     if layer.layer_index in candidate_indices:
                         for graph_index, scenario_id in enumerate(batch.scenario_id.tolist()):
@@ -425,6 +558,7 @@ def main() -> None:
                 )
 
         physical = pd.DataFrame(physical_rows)
+        physical_updates = pd.DataFrame(physical_update_rows)
         step_summary = (
             physical.groupby("correction_step")["r_inf_pu_100MVA"]
             .agg(
@@ -433,6 +567,15 @@ def main() -> None:
                 mean="mean",
             )
             .reset_index()
+        )
+        physical_metric_summary = summarize_metrics(physical, PHYSICAL_METRICS)
+        physical_update_metrics = tuple(
+            column
+            for column in physical_updates.columns
+            if column not in {"scenario_id", "correction_step"}
+        )
+        physical_update_summary = summarize_metrics(
+            physical_updates, physical_update_metrics
         )
         nonmonotone = int(
             sum(
@@ -535,7 +678,10 @@ def main() -> None:
             late_cka[node] = float(values.mean())
 
         write_csv(output / "physical_trajectory.csv", physical_rows)
+        write_csv(output / "physical_updates.csv", physical_update_rows)
         step_summary.to_csv(output / "step_summary.csv", index=False)
+        physical_metric_summary.to_csv(output / "physical_metric_summary.csv", index=False)
+        physical_update_summary.to_csv(output / "physical_update_summary.csv", index=False)
         write_csv(output / "ablation.csv", ablation_rows)
         ablation_summary.to_csv(output / "ablation_summary.csv", index=False)
         write_csv(output / "local_updates.csv", local_update_rows)

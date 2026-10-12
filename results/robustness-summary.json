@@ -147,7 +147,7 @@
     ]
   },
   "node_activity": {
-    "definition": "per-node ||h_out-h_in||_2 / (||h_in||_2 + 1e-12)",
+    "definition": "per-node ||h_functional-h_in||_2 / (||h_in||_2 + 1e-12); h_functional is h_out for steps 2-11 and h_graph/readout for step 12",
     "steps": [
       2,
       3,
@@ -172,6 +172,7 @@
   },
   "figures": [
     "figures/trajectories/cross_checkpoint_trajectory_and_cka.png",
+    "figures/trajectories/physical_refinement_trajectory.png",
     "figures/interventions/representation_change_vs_importance.png",
     "figures/interventions/direct_update_vs_importance.png",
     "figures/node-activity/node_activity_fraction.png",

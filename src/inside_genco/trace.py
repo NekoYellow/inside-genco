@@ -21,6 +21,20 @@ def _copy(tensor: torch.Tensor, to_cpu: bool) -> torch.Tensor:
     return result.cpu() if to_cpu else result
 
 
+def _operator_modules(
+    model: torch.nn.Module, target_index: int, plan: InterventionPlan
+) -> tuple[torch.nn.Module, torch.nn.Module, torch.nn.Module, int]:
+    """Resolve one graph operator and its paired node-type normalizations."""
+
+    source_index = int(plan.operator_sources.get(target_index, target_index))
+    return (
+        model.layers[source_index],
+        model.norms_bus[source_index],
+        model.norms_gen[source_index],
+        source_index,
+    )
+
+
 @dataclass(frozen=True)
 class LayerTrace:
     layer_index: int
@@ -40,6 +54,19 @@ class LayerTrace:
     feedback_used: bool
     skipped: bool
     feedback_scale: float
+
+    def functional_state(self, node_type: str) -> torch.Tensor:
+        """Return the state that affects a readout or a later correction.
+
+        The final correction's graph state owns the returned readout. Its
+        subsequently computed physics feedback is not consumed, so exposing
+        ``h_out`` there as functional activity would be misleading.
+        """
+
+        if node_type not in {"bus", "gen"}:
+            raise ValueError("node_type must be 'bus' or 'gen'")
+        stage = "h_out" if self.feedback_used else "h_graph"
+        return getattr(self, f"{stage}_{node_type}")
 
 
 @dataclass(frozen=True)
@@ -112,7 +139,7 @@ class TraceForwardAdapter:
         traces: list[LayerTrace] = []
         output_temp = gen_temp = None
 
-        for index, conv in enumerate(model.layers):
+        for index in range(len(model.layers)):
             h_in_bus, h_in_gen = h_bus, h_gen
             if index in plan.skip_layers:
                 h_bus, h_gen = h_in_bus, h_in_gen
@@ -128,9 +155,12 @@ class TraceForwardAdapter:
                 )
                 continue
 
+            conv, norm_bus, norm_gen, source_index = _operator_modules(
+                model, index, plan
+            )
             out = conv({"bus": h_bus, "gen": h_gen}, edge_index_dict, edge_attr_proj_dict)
-            out_bus = model.activation(model.norms_bus[index](out["bus"]))
-            out_gen = model.activation(model.norms_gen[index](out["gen"]))
+            out_bus = model.activation(norm_bus(out["bus"]))
+            out_gen = model.activation(norm_gen(out["gen"]))
             h_graph_bus = h_bus + out_bus if out_bus.shape == h_bus.shape else out_bus
             h_graph_gen = h_gen + out_gen if out_gen.shape == h_gen.shape else out_gen
             h_graph_bus = apply_tensor_edit(h_graph_bus, plan.edit_for(index, "h_graph", "bus"))

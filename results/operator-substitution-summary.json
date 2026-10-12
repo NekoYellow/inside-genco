@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "variant": "case118_base_seed0",
+  "conditions": 115,
+  "targets": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "sources": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "diagonal_best_targets": 11,
+  "off_diagonal_cells": 110,
+  "off_diagonal_positive_cells": 110,
+  "off_diagonal_delta_final_r_inf": {
+    "min": 0.0105131373,
+    "median": 0.3710310845,
+    "mean": 4.756351726097092,
+    "max": 34.5417662
+  },
+  "figure": "figures/operators/operator_substitution_matrix.png",
+  "source_artifact": "outputs/operator-substitution/case118_base_seed0"
+}

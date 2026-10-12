@@ -1,14 +1,20 @@
-# Inside GENCO's 12 Correction Steps
+# Inside GENCO: Stage-Specific Computation in a Learned Physics Solver
 
-This is an effective-depth study of released GENCO power-flow checkpoints. It follows hidden states and physical residuals through all 12 corrections, measures correction importance through causal bypasses, compares fixed-budget compute policies, and maps node-level state activity.
+This repository asks whether GENCO's 12 corrections repeat one stationary rule or implement a stage-specific learned correction schedule around a shared physics-feedback loop. It traces released checkpoints, measures physical refinement, intervenes on complete corrections, and tests whether correction blocks learned for different depths are interchangeable.
 
-## Main result
+## Main findings
 
-A correction can preserve representation geometry while remaining important to the final physical solution. In the primary case118 checkpoint, bus-state CKA reaches `0.999948` at correction 11, while bypassing that correction still increases final power-balance residual. Node-level measurements add spatial detail: with relative-update threshold `0.05`, `62.3%` of bus nodes remain active at correction 11 and `32.8%` remain active at correction 12.
+GENCO is a hybrid shared/untied architecture: the physics feedback, decoder, and output heads are shared, while each correction has its own graph Transformer and LayerNorm. In case118 Base, strict sharing of the compatible corrections 2–12 would reduce unique parameters from `20,069,187` to `2,094,147` (9.58×), without changing the 12-call computation graph.
+
+The released checkpoints enter a locally stable latent regime before physical refinement is finished. In the primary checkpoint, mean node-centered bus CKA over corrections 7–12 is `0.9957`, yet median final power-balance residual continues from `0.0727` after correction 7 to `0.00313` after correction 12. Bypassing late corrections still damages the final solution. Thus high CKA is a useful global trajectory descriptor, but not a reliable local late-stage importance criterion.
+
+Cross-correction substitution gives the sharper architecture result. For every shape-compatible target/source pair in corrections 2–12, replacing the target graph Transformer and LayerNorms with those from another depth increases mean final residual. The unchanged diagonal is best for all 11 targets; across 110 off-diagonal cells, median damage is `0.371` p.u. This supports stage-specific functional specialization of the correction blocks in the released untied checkpoint.
 
 ![Cross-checkpoint trajectories](figures/trajectories/cross_checkpoint_trajectory_and_cka.png)
 
-![Node activity across thresholds](figures/node-activity/node_activity_threshold_heatmap.png)
+![Physical refinement](figures/trajectories/physical_refinement_trajectory.png)
+
+![Operator substitution](figures/operators/operator_substitution_matrix.png)
 
 The analysis covers four released checkpoints and 115 fixed-connectivity operating conditions per checkpoint:
 
@@ -18,7 +24,7 @@ The analysis covers four released checkpoints and 115 fixed-connectivity operati
 
 ## Repository contents
 
-- `src/inside_genco/`: tracing, similarity, intervention, trajectory, and compute-policy primitives
+- `src/inside_genco/`: tracing, intervention, similarity, trajectory, and trainable tied-tail controls
 - `scripts/`: asset download, checkpoint evaluation, cross-checkpoint summarization, and environment setup
 - `configs/checkpoints.yaml`: the four evaluated checkpoints and their frozen selections
 - `assets/manifests/`: exact public asset revisions, file sizes, and hashes
@@ -52,6 +58,9 @@ do
 done
 
 .venv/bin/python scripts/summarize_trajectory_analysis.py
+.venv/bin/python scripts/run_operator_substitution.py --variant case118_base_seed0 --batch-size 115
+.venv/bin/python scripts/summarize_operator_substitution.py
+.venv/bin/python scripts/report_parameter_sharing.py
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
@@ -59,7 +68,7 @@ The complete workflow, output schema, and expected files are described in [docs/
 
 ## Evaluation boundary
 
-The reported evidence uses released checkpoints, fixed-connectivity operating-condition families, CPU FP32 forward passes, and FP64 research metrics. The causal bypass experiment measures dependence within the remaining correction chain. Node activity supplies a candidate compute budget; a production node-gating implementation still needs sparse edge execution, quality controls, and timing measurements.
+The released-checkpoint evidence can establish functional specialization and non-interchangeability, but cannot by itself prove that untied training is better than recurrent sharing: a fair trained tied baseline is required for that claim. The included tied-tail model variants and configs make that next test explicit. Correction 12 is measured at its graph/readout endpoint; its subsequent feedback is excluded because no later correction consumes it.
 
 ## Upstream provenance
 

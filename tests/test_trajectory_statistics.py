@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import argparse
+from pathlib import Path
+import sys
 import unittest
 
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from run_trajectory_analysis import bootstrap_associations
+from run_operator_substitution import parse_steps, summarize_substitutions
 
 
 class RobustnessStatisticsTests(unittest.TestCase):
@@ -65,6 +70,34 @@ class RobustnessStatisticsTests(unittest.TestCase):
                 self.local_change,
                 samples=5,
             )
+
+    def test_operator_steps_and_summary_are_deterministic(self) -> None:
+        self.assertEqual(parse_steps("11,2,7", 12), [2, 7, 11])
+        with self.assertRaisesRegex(argparse.ArgumentTypeError, "steps must be in"):
+            parse_steps("1,2", 12)
+        rows = pd.DataFrame(
+            [
+                {
+                    "scenario_id": scenario,
+                    "target_step": 2,
+                    "source_step": source,
+                    "r_inf_pu_100MVA": float(source + scenario),
+                    "delta_r_inf_pu_100MVA": float(source - 2),
+                    "positive_delta_r_inf_pu_100MVA": float(max(source - 2, 0)),
+                    "delta_vm_mae_pu": 0.1,
+                    "delta_va_mae_rad": 0.2,
+                    "delta_p_mae_all_bus_MW": 0.3,
+                    "delta_q_mae_all_bus_Mvar": 0.4,
+                }
+                for scenario in (1, 2)
+                for source in (2, 3)
+            ]
+        )
+        summary = summarize_substitutions(rows)
+        self.assertEqual(len(summary), 2)
+        diagonal = summary[summary.source_step == 2].iloc[0]
+        self.assertEqual(diagonal.conditions, 2)
+        self.assertEqual(diagonal.delta_final_r_inf_mean, 0.0)
 
 
 if __name__ == "__main__":

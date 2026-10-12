@@ -53,6 +53,7 @@ class InterventionPlan:
 
     skip_layers: frozenset[int] = field(default_factory=frozenset)
     feedback_scales: Mapping[int, float] = field(default_factory=dict)
+    operator_sources: Mapping[int, int] = field(default_factory=dict)
     edits: tuple[TensorEdit, ...] = ()
 
     def validate(self, num_layers: int) -> None:
@@ -68,6 +69,18 @@ class InterventionPlan:
                 raise ValueError(f"invalid feedback layer {layer}; expected 0..{num_layers - 1}")
             if not isinstance(scale, (int, float)) or not float("-inf") < float(scale) < float("inf"):
                 raise ValueError("feedback scales must be finite numbers")
+        for target, source in self.operator_sources.items():
+            if not isinstance(target, int) or not isinstance(source, int):
+                raise TypeError("operator source mappings require integer layer indices")
+            if target <= 0 or source <= 0:
+                raise ValueError("operator substitution excludes the width-changing layer 0")
+            if target >= num_layers or source >= num_layers:
+                raise ValueError(
+                    f"invalid operator substitution {target} <- {source}; "
+                    f"expected indices 1..{num_layers - 1}"
+                )
+            if target in self.skip_layers:
+                raise ValueError("a skipped layer cannot also receive a substituted operator")
         seen: set[tuple[int, str, str]] = set()
         for edit in self.edits:
             if edit.layer_index >= num_layers:
