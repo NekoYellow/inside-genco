@@ -4,7 +4,7 @@
 
 `assets/manifests/case118-assets.lock.json` pins the primary case118 data and model revision. `assets/manifests/cross-network-assets.lock.json` pins the added seed, model-width, and case30 controls. Every file entry records its remote path, local path, byte size, and content hash.
 
-The frozen operating-condition selections live under `assets/operating-conditions/`. Their dependency hashes bind each selection to its asset manifest, official test split, topology index, and group split.
+The frozen operating-condition selections are in `assets/operating-conditions/`. Their dependency hashes bind each selection to its asset manifest, official test split, topology index, and group split.
 
 ## Environment
 
@@ -23,8 +23,6 @@ The vendor setup checks out `gridfm-graphkit` at the revision in `vendor/graphki
 .venv/bin/python scripts/download_assets.py \
   --lock assets/manifests/cross-network-assets.lock.json --scope full
 ```
-
-Downloads use temporary partial files, resume transfers, and verify every file before promotion.
 
 ## Run
 
@@ -51,12 +49,8 @@ Each checkpoint run writes:
 - `local_change_vs_importance.csv`: step-level association table
 - `summary.json`: compact checkpoint summary and paired bootstrap intervals
 
-The summarizer rebuilds `results/robustness-summary.*`, `results/node-activity-summary.csv`, and the cross-checkpoint figures.
-
 ## Tests
 
 ```bash
 .venv/bin/python -m unittest discover -s tests -v
 ```
-
-The fast tests cover stable identities, split isolation, content verification, CKA alignment, node-update metrics, deterministic interventions, policy construction, frozen checkpoint state, and paired bootstrap behavior.
