@@ -1,12 +1,12 @@
 # Inside GENCO: Stage-Specific Computation in a Learned Physics Solver
 
-This project conducts an inference-only study on the computation inside [GENCO](https://arxiv.org/abs/2608.09921). GENCO shares its output heads, physics decoder, and residual-to-latent feedback, while each of its 12 corrections has a separate graph Transformer and bus/generator LayerNorm. We explore waht those correction blocks do to get a feasible solution, and whether they perform interchangeable iterations or specialized refinement stages.
+This project conducts an inference-only study on the computation inside [GENCO](https://arxiv.org/abs/2608.09921). GENCO shares its output heads, physics decoder, and residual-to-latent feedback, while each of its 12 corrections has a separate graph Transformer and bus/generator LayerNorm. We explore what those correction blocks do to get a feasible solution, and whether they perform interchangeable iterations or specialized refinement stages.
 
 ## Findings
 
 - **Latent stabilization precedes physical convergence.** In case118 Base seed 0, mean node-centered bus CKA over corrections 7–12 is 0.9957, while median power-balance residual falls from 0.0727 after correction 7 to 0.00313 after correction 12.
 - **Stable geometry does not imply low importance.** Whole-correction bypass still damages the final solution. CKA change correlates with bypass damage across the full trajectory, but is unreliable as a local late-stage criterion in the primary checkpoint.
-- **Correction blocks are stage-specialized.** In the primary checkpoint, all 110(11x11-11) non-identical substitutions of correction blocks increase mean final residual.
+- **Correction blocks are stage-specialized.** In the primary checkpoint, all 110 (11×11−11) non-identical substitutions of correction blocks increase mean final residual.
 
 ![Operator substitution](figures/operators/operator_substitution_matrix.png)
 

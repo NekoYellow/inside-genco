@@ -29,7 +29,7 @@ The primary experiment uses the released case118 Base seed-0 checkpoint on 115 f
 
 ![Step-wise physical refinement](../figures/trajectories/physical_refinement_trajectory.png)
 
-*Figure 1 — Median active/reactive bus mismatch and adjacent decoded-variable movement for case118 Base seed 0. Adjacent movements are normalized by their correction-2 medians only for display; absolute values are retained in the result table.*
+*Figure 1 — Median active/reactive bus mismatch and adjacent decoded-variable movement for case118 Base seed 0.*
 
 For case118 Base seed 0, median maximum power-balance residual falls from **23.6794** after correction 1 to **1.1603** after correction 2, **0.07267** after correction 7, and **0.003134** after correction 12. Median active bus mismatch falls from **1.152 MW** after correction 7 to **0.0885 MW** after correction 12; reactive mismatch falls from **0.2268 Mvar** to **0.00973 Mvar**. Voltage and bus-injection movements shrink strongly, while generator active-power adjustments remain stage-dependent rather than decaying monotonically.
 
@@ -41,7 +41,7 @@ The bus representation enters a high-similarity regime over corrections 7–12. 
 
 ![Cross-checkpoint trajectory](../figures/trajectories/cross_checkpoint_trajectory_and_cka.png)
 
-*Figure 3 — Median physical trajectory and late node-centered CKA for four released checkpoints.*
+*Figure 3 — Median physical trajectory and late node-centered CKA for released checkpoints.*
 
 The coarse-to-fine physical trajectory and late bus-similarity regime recur across seeds, model widths, and network sizes. Generator behavior and temporary non-monotonicity vary more across checkpoints.
 
@@ -51,15 +51,11 @@ Corrections 2–11 are bypassed one at a time as complete computational units: g
 
 ![Representation change versus bypass damage](../figures/interventions/representation_change_vs_importance.png)
 
-*Figure 4 — CKA geometry change along the normal trajectory versus final physical damage from a whole-correction bypass.*
+*Figure 4 — CKA geometry change along the normal trajectory versus mean positive final residual damage from a whole-correction bypass.*
 
-Across the full corrections 2–11 trajectory, CKA change and bypass damage are strongly associated in all four checkpoints. In the primary checkpoint, their step-level Spearman correlation is **0.855**. Restricted to late corrections 7–11, however, it falls to **0.10**: correction 11 has the smallest CKA change, whereas correction 8 has the smallest bypass damage.
+Across the full corrections 2–11 trajectory, CKA change and bypass damage are strongly associated in all checkpoints. In the primary checkpoint, their step-level Spearman correlation is **0.855**. Restricted to late corrections 7–11, however, it falls to **0.10**: correction 11 has the smallest CKA change, whereas correction 8 has the smallest bypass damage.
 
-The appropriate conclusion is therefore:
-
-*> CKA captures correction importance over the global trajectory but fails as a local late-stage criterion in the primary checkpoint.*
-
-It should not be described as a general importance predictor.
+We may conclude that CKA captures correction importance over the global trajectory but fails as a local late-stage criterion, so it should not be seen as a general importance predictor.
 
 ## Evidence 3: learned correction blocks are not interchangeable
 
@@ -67,7 +63,7 @@ For every target correction `t` and source correction `s` in 2–12, the operato
 
 ![Cross-correction operator substitution](../figures/operators/operator_substitution_matrix.png)
 
-*Figure 5 — Mean final residual damage when the target correction uses the source correction's graph Transformer and LayerNorms. Gray diagonal cells are the unchanged checkpoint; off-diagonal damage is shown on a logarithmic scale.*
+*Figure 5 — Mean final residual damage when the target correction uses the source correction's graph Transformer and LayerNorms.*
 
 The unchanged diagonal is best for **11/11** targets. Every one of the **110** off-diagonal substitutions increases mean final residual: the smallest increase is **0.0105 p.u.**, the median is **0.371 p.u.**, and the maximum is **34.54 p.u.** Even neighboring late correction blocks are not freely interchangeable.
 
@@ -77,7 +73,7 @@ This result supports functional specialization within the released untied checkp
 
 The released case118 Base model has **20,069,187** unique parameters. If correction 1 remains independent while corrections 2–12 share correction 2's graph operator and both LayerNorms, the same 12-call computation graph has **2,094,147** unique parameters, a **9.58×** reduction. Sharing the graph operator while retaining step-specific LayerNorms gives **2,109,507** parameters.
 
-To establish an accuracy–parameter tradeoff, we need to train these alternative architectures from scratch: the original untied model, a strict recurrent-tail model, and a shared-graph model with step-specific LayerNorms.
+To establish an accuracy–parameter tradeoff, we need to train these alternative architectures from scratch: the original untied model, a strict recurrent-tail model, and a shared-graph model with step-specific LayerNorms. We began exploring this comparison but did not complete it because of the computational cost: training all three architectures with three seeds each was estimated to require several days of RTX 6000D GPU time.
 
 ## Conclusion
 
