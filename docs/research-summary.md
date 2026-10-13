@@ -86,3 +86,25 @@ To establish an accuracy–parameter tradeoff, we need to train these alternativ
 ## Conclusion
 
 The evidence suggests that GENCO's 12 corrections are not interchangeable iterations of a stationary operator, but a learned sequence of specialized refinement stages. Bus latent geometry stabilizes before physical feasibility converges, and this stable geometry still coexists with widespread small node updates. Late corrections can remain functionally important despite small representational change, and replacing a correction block with one learned at another depth consistently damages the final solution. An experiment to train GENCO of alternative architectures from scratch could answer whether this specialization also yields a better accuracy–parameter tradeoff than recurrent sharing.
+
+## Metric glossary
+
+Below lists a few metrics used in this research, as well as some related GENCO concepts. In the formulas below, $r_i^P$ and $r_i^Q$ are bus power-balance mismatches.
+
+| Metric / term | Definition |
+| --- | --- |
+| Maximum power-balance residual, $R_\infty$ | Largest absolute active mismatch over non-REF buses or reactive mismatch over PQ buses, divided by the 100 MVA base: $R_\infty=\max(\max_{i\notin\mathrm{REF}}\lvert r_i^P\rvert,\max_{i\in\mathrm{PQ}}\lvert r_i^Q\rvert)/100$. |
+| Active / reactive mismatch | Mean absolute power-balance mismatch over all buses, in MW / Mvar. |
+| Combined imbalance (PBE) | Mean or maximum of $\sqrt{(r_i^P)^2+(r_i^Q)^2}$ over all buses, in MVA. |
+| Voltage / angle error | Mean or maximum absolute prediction error against the target: voltage magnitude over PQ buses, in p.u.; reference-aligned voltage angle over non-REF buses, in radians. Reference-bus voltage error is recorded separately. |
+| Adjacent physical movement | Mean absolute decoded-variable change between consecutive corrections, over buses or generators as appropriate. Angle changes are reference-aligned and wrapped to $[-\pi,\pi]$. |
+| Latent states | $h_{\mathrm{in}}$: input to a correction; $h_{\mathrm{graph}}$: state after graph processing and residual addition; $h_{\mathrm{out}}$: state after physics feedback. |
+| Linear CKA | Representation similarity: $\operatorname{CKA}(X,Y)=\lVert X^\top Y\rVert_F^2/(\lVert X^\top X\rVert_F\lVert Y^\top Y\rVert_F)$. Rows pool aligned condition–node pairs; columns are mean-centered before calculation. |
+| Node-centered CKA | Before CKA, subtract each device's mean feature vector across conditions at each correction. |
+| Local representation change | $1-\operatorname{CKA}(h_{\mathrm{in}},h_{\mathrm{out}})$ for bus states within a correction, without additional node centering. |
+| Node activity | A node is active when $\lVert h_{\mathrm{graph}}-h_{\mathrm{in}}\rVert_2/(\lVert h_{\mathrm{in}}\rVert_2+10^{-12})>\tau$. Average the active fraction equally across conditions, separately for buses and generators. |
+| Functional/net node update | The same relative-update calculation, using $h_{\mathrm{out}}$ at corrections 2–11 and $h_{\mathrm{graph}}$ at correction 12 because final feedback is not consumed. |
+| Bypass damage | For each condition, subtract baseline final $R_\infty$ from final $R_\infty$ after skipping a correction. |
+| Operator-substitution damage | Mean signed final $\Delta R_\infty$ after replacing the target's graph Transformer and both LayerNorms with those from another depth. |
+| Spearman correlation | Correlation between the ranks of local representation change and mean positive bypass damage across steps. |
+| Bootstrap confidence interval | Resample conditions with replacement 2,000 times, recompute damage means and Spearman correlation, and take the 2.5th–97.5th percentiles. CKA stays fixed, so the interval describes damage-sampling uncertainty conditional on the observed CKA. |
