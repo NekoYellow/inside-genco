@@ -39,12 +39,6 @@ To inspect one resolved plan without starting training:
   --architecture untied --seed 0 --dry-run
 ```
 
-Before a full run, the isolated smoke command below extracts three case118 scenarios under the ignored `outputs/training-smoke/` directory and runs one train, validation, and test batch for each architecture. It preserves all 12 corrections but uses one CPU epoch and does not touch the formal run manifests.
-
-```bash
-.venv/bin/python scripts/smoke_training_controls.py
-```
-
 ## Long-running training commands
 
 The following commands are intentionally not executed by the repository workflow. On a single GPU, run them sequentially:
