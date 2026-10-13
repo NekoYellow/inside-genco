@@ -31,7 +31,7 @@ The analysis covers four released checkpoints and 115 fixed-connectivity operati
 - `assets/operating-conditions/`: frozen case118 and case30 condition IDs, topology coverage, and stable-node metadata
 - `results/`: compact machine-readable summaries
 - `figures/`: publication-ready figures grouped by scientific content
-- `docs/`: research summary, node-activity analysis, and reproduction guide
+- `docs/`: research summary, training protocol, and reproduction guide
 - `tests/`: unit tests for integrity, identities, metrics, interventions, and statistics
 - `vendor/graphkit-source.json`: exact upstream source revision and file hashes
 

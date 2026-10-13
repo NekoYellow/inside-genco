@@ -13,7 +13,7 @@ from typing import Callable
 import torch
 from torch_scatter import scatter_add
 
-from .interventions import InterventionPlan, apply_tensor_edit
+from .interventions import InterventionPlan
 
 
 def _copy(tensor: torch.Tensor, to_cpu: bool) -> torch.Tensor:
@@ -51,22 +51,7 @@ class LayerTrace:
     feedback_bus: torch.Tensor | None
     h_out_bus: torch.Tensor
     h_out_gen: torch.Tensor
-    feedback_used: bool
     skipped: bool
-    feedback_scale: float
-
-    def functional_state(self, node_type: str) -> torch.Tensor:
-        """Return the state that affects a readout or a later correction.
-
-        The final correction's graph state owns the returned readout. Its
-        subsequently computed physics feedback is not consumed, so exposing
-        ``h_out`` there as functional activity would be misleading.
-        """
-
-        if node_type not in {"bus", "gen"}:
-            raise ValueError("node_type must be 'bus' or 'gen'")
-        stage = "h_out" if self.feedback_used else "h_graph"
-        return getattr(self, f"{stage}_{node_type}")
 
 
 @dataclass(frozen=True)
@@ -150,12 +135,12 @@ class TraceForwardAdapter:
                         _copy(h_bus, self.snapshot_to_cpu), _copy(h_gen, self.snapshot_to_cpu),
                         None, None, None, None, None, None,
                         _copy(h_bus, self.snapshot_to_cpu), _copy(h_gen, self.snapshot_to_cpu),
-                        True, True, 0.0,
+                        True,
                     )
                 )
                 continue
 
-            conv, norm_bus, norm_gen, source_index = _operator_modules(
+            conv, norm_bus, norm_gen, _source_index = _operator_modules(
                 model, index, plan
             )
             out = conv({"bus": h_bus, "gen": h_gen}, edge_index_dict, edge_attr_proj_dict)
@@ -163,8 +148,6 @@ class TraceForwardAdapter:
             out_gen = model.activation(norm_gen(out["gen"]))
             h_graph_bus = h_bus + out_bus if out_bus.shape == h_bus.shape else out_bus
             h_graph_gen = h_gen + out_gen if out_gen.shape == h_gen.shape else out_gen
-            h_graph_bus = apply_tensor_edit(h_graph_bus, plan.edit_for(index, "h_graph", "bus"))
-            h_graph_gen = apply_tensor_edit(h_graph_gen, plan.edit_for(index, "h_graph", "gen"))
 
             bus_temp = model.mlp_bus(h_graph_bus)
             gen_temp = model.mlp_gen(h_graph_gen)
@@ -182,11 +165,8 @@ class TraceForwardAdapter:
             residual = torch.stack([residual_p, residual_q], dim=-1)
             model.layer_residuals[index] = torch.linalg.norm(residual, dim=-1).mean()
             feedback = model.physics_mlp(residual)
-            scale = float(plan.feedback_scales.get(index, 1.0))
-            h_out_bus = h_graph_bus + scale * feedback
+            h_out_bus = h_graph_bus + feedback
             h_out_gen = h_graph_gen
-            h_out_bus = apply_tensor_edit(h_out_bus, plan.edit_for(index, "h_out", "bus"))
-            h_out_gen = apply_tensor_edit(h_out_gen, plan.edit_for(index, "h_out", "gen"))
 
             traces.append(
                 LayerTrace(
@@ -197,7 +177,7 @@ class TraceForwardAdapter:
                     _copy(p_flow, self.snapshot_to_cpu), _copy(q_flow, self.snapshot_to_cpu),
                     _copy(residual, self.snapshot_to_cpu), _copy(feedback, self.snapshot_to_cpu),
                     _copy(h_out_bus, self.snapshot_to_cpu), _copy(h_out_gen, self.snapshot_to_cpu),
-                    index < len(model.layers) - 1, False, scale,
+                    False,
                 )
             )
             h_bus, h_gen = h_out_bus, h_out_gen

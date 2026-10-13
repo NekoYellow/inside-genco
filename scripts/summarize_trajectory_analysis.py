@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare trajectories, ablations, and node activity across checkpoints."""
+"""Summarize physical refinement, CKA, and bypass evidence across checkpoints."""
 
 from __future__ import annotations
 
@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yaml
-from matplotlib.colors import LogNorm, Normalize
 
 
 ORDER = (
@@ -25,7 +24,6 @@ ORDER = (
     "case30_base_seed0",
 )
 COLORS = ("#264653", "#2a9d8f", "#e76f51", "#7b2cbf")
-ACTIVITY_THRESHOLDS = (0.01, 0.02, 0.05, 0.10, 0.20)
 
 
 def save_figure(fig: plt.Figure, category: str, stem: str) -> list[str]:
@@ -50,21 +48,13 @@ def main() -> None:
         summary = json.loads((directory / "summary.json").read_text())
         steps = pd.read_csv(directory / "step_summary.csv")
         association = pd.read_csv(directory / "local_change_vs_importance.csv")
-        node_updates = pd.read_csv(directory / "node_updates.csv")
         physical_metrics = pd.read_csv(directory / "physical_metric_summary.csv")
         physical_updates = pd.read_csv(directory / "physical_update_summary.csv")
-        required_node_columns = {
-            "scenario_id", "correction_step", "node_type", "device_id", "update_relative_l2"
-        }
-        if required_node_columns - set(node_updates.columns):
-            raise ValueError(f"incomplete node-update table: {name}")
-        if set(node_updates.correction_step.unique()) != set(range(2, 13)):
-            raise ValueError(f"node-update steps are incomplete: {name}")
         if set(physical_metrics.correction_step.unique()) != set(range(1, 13)):
             raise ValueError(f"physical-metric steps are incomplete: {name}")
         if set(physical_updates.correction_step.unique()) != set(range(2, 13)):
             raise ValueError(f"physical-update steps are incomplete: {name}")
-        tables[name] = (summary, steps, association, node_updates)
+        tables[name] = (summary, steps, association)
         physical_tables[name] = (physical_metrics, physical_updates)
         records.append(
             {
@@ -88,14 +78,7 @@ def main() -> None:
                 "late_local_importance_spearman": summary["association_statistics"]["cka_late"]["spearman"],
                 "late_local_importance_spearman_ci_low": summary["association_statistics"]["cka_late"]["bootstrap_ci_low"],
                 "late_local_importance_spearman_ci_high": summary["association_statistics"]["cka_late"]["bootstrap_ci_high"],
-                "direct_update_importance_spearman": summary["direct_update_importance_spearman"],
-                "direct_update_importance_spearman_ci_low": summary["association_statistics"]["direct_all"]["bootstrap_ci_low"],
-                "direct_update_importance_spearman_ci_high": summary["association_statistics"]["direct_all"]["bootstrap_ci_high"],
-                "late_direct_update_importance_spearman": summary["association_statistics"]["direct_late"]["spearman"],
-                "late_direct_update_importance_spearman_ci_low": summary["association_statistics"]["direct_late"]["bootstrap_ci_low"],
-                "late_direct_update_importance_spearman_ci_high": summary["association_statistics"]["direct_late"]["bootstrap_ci_high"],
                 "smallest_local_change_step": summary["smallest_local_change_step"],
-                "smallest_direct_update_step": summary["smallest_direct_update_step"],
                 "least_ablation_damage_step": summary["least_ablation_damage_step"],
                 "model_state_sha256": summary["model_state_sha256"],
             }
@@ -117,7 +100,7 @@ def main() -> None:
 
     fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.5))
     for color, row in zip(COLORS, records):
-        _, steps, _, _ = tables[row["variant"]]
+        _, steps, _ = tables[row["variant"]]
         axes[0].plot(
             steps.correction_step,
             steps["median"],
@@ -163,6 +146,39 @@ def main() -> None:
     axes[1].legend(frameon=False)
     fig.tight_layout()
     trajectory_figures = save_figure(fig, "trajectories", "cross_checkpoint_trajectory_and_cka")
+
+    primary_cka = pd.read_csv(
+        ROOT / "outputs/trajectory-analysis" / ORDER[0] / "cka.csv"
+    )
+    primary_cka = primary_cka[primary_cka.kind == "cross_step_h_graph"]
+    fig, axes = plt.subplots(2, 2, figsize=(10.0, 8.4), constrained_layout=True)
+    heatmap = None
+    for row_index, node_type in enumerate(("bus", "gen")):
+        for column_index, centered in enumerate((False, True)):
+            selected = primary_cka[
+                (primary_cka.node_type == node_type)
+                & (primary_cka.node_centered.astype(bool) == centered)
+            ]
+            matrix = selected.pivot(
+                index="left_step", columns="right_step", values="value"
+            ).sort_index().sort_index(axis=1)
+            if matrix.shape != (12, 12) or matrix.isna().any().any():
+                raise ValueError("primary cross-correction CKA matrix is incomplete")
+            ax = axes[row_index, column_index]
+            heatmap = ax.imshow(matrix.to_numpy(float), vmin=0.0, vmax=1.0, cmap="viridis")
+            ax.set(
+                title=f"{node_type.title()} · {'node-centered' if centered else 'raw'}",
+                xlabel="Correction step",
+                ylabel="Correction step",
+                xticks=np.arange(12),
+                xticklabels=range(1, 13),
+                yticks=np.arange(12),
+                yticklabels=range(1, 13),
+            )
+    assert heatmap is not None
+    colorbar = fig.colorbar(heatmap, ax=axes, shrink=0.88, pad=0.02)
+    colorbar.set_label("Linear CKA")
+    cka_figures = save_figure(fig, "representations", "cka_multiview_heatmaps")
 
     primary_metrics, primary_physical_updates = physical_tables[ORDER[0]]
     fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.6), constrained_layout=True)
@@ -228,7 +244,7 @@ def main() -> None:
 
     fig, axes = plt.subplots(2, 2, figsize=(10.2, 8.2), constrained_layout=True)
     for ax, color, row in zip(axes.ravel(), COLORS, records):
-        _, _, association, _ = tables[row["variant"]]
+        _, _, association = tables[row["variant"]]
         ax.scatter(
             association.local_change,
             association.mean_positive_final_delta_r_inf,
@@ -252,177 +268,6 @@ def main() -> None:
         ax.set_ylabel(r"Mean positive final $\Delta R_\infty$")
     importance_figures = save_figure(fig, "interventions", "representation_change_vs_importance")
 
-    fig, axes = plt.subplots(2, 2, figsize=(10.2, 8.2), constrained_layout=True)
-    for ax, color, row in zip(axes.ravel(), COLORS, records):
-        _, _, association, _ = tables[row["variant"]]
-        ax.scatter(
-            association.update_relative_l2_median,
-            association.mean_positive_final_delta_r_inf,
-            s=42,
-            color=color,
-        )
-        for point in association.itertuples():
-            ax.annotate(
-                str(int(point.correction_step)),
-                (point.update_relative_l2_median, point.mean_positive_final_delta_r_inf),
-                xytext=(4, 3),
-                textcoords="offset points",
-                fontsize=8,
-            )
-        ax.set(xscale="log", yscale="log", title=row["label"])
-        ax.grid(color="#e5e7eb", linewidth=0.55)
-        ax.spines[["top", "right"]].set_visible(False)
-    for ax in axes[-1, :]:
-        ax.set_xlabel(r"Median direct update $\|H_{out}-H_{in}\|_F/(\|H_{in}\|_F+\epsilon)$")
-    for ax in axes[:, 0]:
-        ax.set_ylabel(r"Mean positive final $\Delta R_\infty$")
-    direct_importance_figures = save_figure(fig, "interventions", "direct_update_vs_importance")
-
-    activity_rows = []
-    for row in records:
-        node_updates = tables[row["variant"]][3]
-        for (node_type, step), selected in node_updates.groupby(
-            ["node_type", "correction_step"], sort=True
-        ):
-            for threshold in ACTIVITY_THRESHOLDS:
-                by_condition = (
-                    selected.assign(active=selected.update_relative_l2 > threshold)
-                    .groupby("scenario_id")["active"]
-                    .mean()
-                )
-                activity_rows.append(
-                    {
-                        "variant": row["variant"],
-                        "label": row["label"],
-                        "node_type": node_type,
-                        "correction_step": int(step),
-                        "threshold": threshold,
-                        "active_fraction": float(by_condition.mean()),
-                        "condition_active_fraction_median": float(by_condition.median()),
-                        "condition_active_fraction_p05": float(by_condition.quantile(0.05)),
-                        "condition_active_fraction_p95": float(by_condition.quantile(0.95)),
-                        "conditions": int(len(by_condition)),
-                        "stable_nodes": int(selected.device_id.nunique()),
-                    }
-                )
-    activity = pd.DataFrame(activity_rows)
-    activity.to_csv(ROOT / "results/node-activity-summary.csv", index=False)
-
-    primary_activity = activity[activity.variant == ORDER[0]]
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.5), constrained_layout=True)
-    threshold_colors = plt.cm.viridis(np.linspace(0.08, 0.92, len(ACTIVITY_THRESHOLDS)))
-    for ax, node_type, title in zip(axes, ("bus", "gen"), ("Bus nodes", "Generator nodes")):
-        for threshold, color in zip(ACTIVITY_THRESHOLDS, threshold_colors):
-            selected = primary_activity[
-                (primary_activity.node_type == node_type)
-                & (primary_activity.threshold == threshold)
-            ].sort_values("correction_step")
-            ax.plot(
-                selected.correction_step,
-                selected.active_fraction,
-                marker="o",
-                linewidth=1.8,
-                color=color,
-                label=fr"$\tau={threshold:g}$",
-            )
-        ax.set(
-            title=title,
-            xlabel="Correction step",
-            ylabel="Fraction of nodes above threshold",
-            ylim=(-0.03, 1.03),
-            xticks=range(2, 13),
-        )
-        ax.grid(color="#e5e7eb", linewidth=0.65)
-        ax.spines[["top", "right"]].set_visible(False)
-    axes[1].legend(frameon=False, ncol=1, loc="upper right")
-    fig.suptitle(
-        "Node-level state activity · case118 Base seed 0",
-        fontsize=14,
-        fontweight="bold",
-    )
-    activity_fraction_figures = save_figure(fig, "node-activity", "node_activity_fraction")
-
-    threshold_grid = np.geomspace(0.005, 1.0, 48)
-    steps_grid = np.arange(2, 13)
-    fig, axes = plt.subplots(2, 2, figsize=(10.4, 8.2), constrained_layout=True)
-    heatmap = None
-    for ax, row in zip(axes.ravel(), records):
-        node_updates = tables[row["variant"]][3]
-        node_updates = node_updates[node_updates.node_type == "bus"]
-        matrix = np.asarray(
-            [
-                [
-                    float(
-                        (
-                            node_updates[node_updates.correction_step == step].update_relative_l2
-                            > threshold
-                        ).mean()
-                    )
-                    for step in steps_grid
-                ]
-                for threshold in threshold_grid
-            ]
-        )
-        heatmap = ax.pcolormesh(
-            steps_grid,
-            threshold_grid,
-            matrix,
-            shading="nearest",
-            cmap="magma",
-            norm=Normalize(vmin=0.0, vmax=1.0),
-        )
-        ax.set(
-            title=row["label"],
-            xlabel="Correction step",
-            ylabel=r"Relative-update threshold $\tau$",
-            yscale="log",
-            xticks=range(2, 13),
-        )
-    assert heatmap is not None
-    colorbar = fig.colorbar(heatmap, ax=axes, shrink=0.88, pad=0.02)
-    colorbar.set_label("Fraction of active bus nodes")
-    fig.suptitle("Bus activity across thresholds and checkpoints", fontsize=14, fontweight="bold")
-    activity_threshold_figures = save_figure(fig, "node-activity", "node_activity_threshold_heatmap")
-
-    primary_updates = tables[ORDER[0]][3]
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 6.2), constrained_layout=True)
-    device_heatmap = None
-    positive = primary_updates.loc[primary_updates.update_relative_l2 > 0, "update_relative_l2"]
-    norm = LogNorm(vmin=float(positive.quantile(0.01)), vmax=float(positive.quantile(0.99)))
-    for ax, node_type, title in zip(axes, ("bus", "gen"), ("Bus nodes", "Generator nodes")):
-        matrix = (
-            primary_updates[primary_updates.node_type == node_type]
-            .groupby(["device_id", "correction_step"])["update_relative_l2"]
-            .median()
-            .unstack("correction_step")
-            .sort_index()
-        )
-        device_heatmap = ax.imshow(
-            matrix.to_numpy(),
-            aspect="auto",
-            interpolation="nearest",
-            cmap="viridis",
-            norm=norm,
-        )
-        ax.set(
-            title=title,
-            xlabel="Correction step",
-            ylabel="Stable device index",
-            xticks=np.arange(len(matrix.columns)),
-            xticklabels=matrix.columns.astype(int),
-        )
-        tick_positions = np.linspace(0, len(matrix.index) - 1, min(7, len(matrix.index)), dtype=int)
-        ax.set_yticks(tick_positions, matrix.index.to_numpy()[tick_positions])
-    assert device_heatmap is not None
-    colorbar = fig.colorbar(device_heatmap, ax=axes, shrink=0.88, pad=0.02)
-    colorbar.set_label("Median relative node update across 115 conditions")
-    fig.suptitle(
-        "Where state updates remain active · case118 Base seed 0",
-        fontsize=14,
-        fontweight="bold",
-    )
-    activity_device_figures = save_figure(fig, "node-activity", "node_activity_by_device")
-
     result = {
         "schema_version": 1,
         "design": {
@@ -436,24 +281,7 @@ def main() -> None:
             "resampling_unit": "operating condition",
             "late_steps": [7, 8, 9, 10, 11],
         },
-        "node_activity": {
-            "definition": (
-                "per-node ||h_functional-h_in||_2 / (||h_in||_2 + 1e-12); "
-                "h_functional is h_out for steps 2-11 and h_graph/readout for step 12"
-            ),
-            "steps": list(range(2, 13)),
-            "thresholds": list(ACTIVITY_THRESHOLDS),
-            "summary_csv": "results/node-activity-summary.csv",
-        },
-        "figures": (
-            trajectory_figures
-            + physical_figures
-            + importance_figures
-            + direct_importance_figures
-            + activity_fraction_figures
-            + activity_threshold_figures
-            + activity_device_figures
-        ),
+        "figures": trajectory_figures + cka_figures + physical_figures + importance_figures,
     }
     (ROOT / "results/robustness-summary.json").write_text(
         json.dumps(result, indent=2, allow_nan=False) + "\n"

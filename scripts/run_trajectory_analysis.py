@@ -41,7 +41,6 @@ from baseline import (
 from download_assets import verify
 from research_data import load_selection
 from inside_genco.interventions import InterventionPlan
-from inside_genco.trajectory_metrics import local_step_metrics, node_relative_l2_updates
 from inside_genco.similarity import linear_cka
 from inside_genco.trace import TraceForwardAdapter
 
@@ -170,7 +169,6 @@ def rank_correlation(left: np.ndarray, right: np.ndarray) -> float:
 
 def bootstrap_associations(
     ablations: pd.DataFrame,
-    local_updates: pd.DataFrame,
     local_change: pd.Series,
     *,
     samples: int = 2000,
@@ -178,52 +176,37 @@ def bootstrap_associations(
 ) -> dict:
     """Resample operating conditions and recompute step-level rank associations.
 
-    CKA is kept fixed because it is a pooled representation statistic.  Direct
-    update norms and ablation damage are both recomputed from each paired
-    operating-condition resample.
+    CKA is kept fixed because it is a pooled representation statistic, while
+    ablation damage is recomputed from each operating-condition resample.
     """
 
     steps = sorted(map(int, local_change.index))
     damage = ablations.pivot(
         index="scenario_id", columns="correction_step", values="positive_delta_final_r_inf"
     )[steps]
-    updates = local_updates[local_updates.node_type == "bus"].pivot(
-        index="scenario_id", columns="correction_step", values="update_relative_l2"
-    )[steps]
-    if not damage.index.equals(updates.index) or damage.isna().any().any() or updates.isna().any().any():
-        raise ValueError("bootstrap inputs are not complete and paired by operating condition")
+    if damage.isna().any().any():
+        raise ValueError("bootstrap inputs are incomplete by operating condition")
     cka_score = local_change.loc[steps].to_numpy(float)
     damage_values = damage.to_numpy(float)
-    update_values = updates.to_numpy(float)
     late_positions = np.asarray([index for index, step in enumerate(steps) if 7 <= step <= 11])
     rng = np.random.default_rng(seed)
     values = {
         "cka_all": np.empty(samples),
         "cka_late": np.empty(samples),
-        "direct_all": np.empty(samples),
-        "direct_late": np.empty(samples),
     }
     for sample in range(samples):
         selected = rng.integers(0, len(damage_values), size=len(damage_values))
         sampled_damage = damage_values[selected].mean(axis=0)
-        sampled_update = np.median(update_values[selected], axis=0)
         values["cka_all"][sample] = rank_correlation(cka_score, sampled_damage)
         values["cka_late"][sample] = rank_correlation(
             cka_score[late_positions], sampled_damage[late_positions]
         )
-        values["direct_all"][sample] = rank_correlation(sampled_update, sampled_damage)
-        values["direct_late"][sample] = rank_correlation(
-            sampled_update[late_positions], sampled_damage[late_positions]
-        )
 
     point_damage = damage_values.mean(axis=0)
-    point_update = np.median(update_values, axis=0)
     result = {}
     point = {
         "cka_all": rank_correlation(cka_score, point_damage),
         "cka_late": rank_correlation(cka_score[late_positions], point_damage[late_positions]),
-        "direct_all": rank_correlation(point_update, point_damage),
-        "direct_late": rank_correlation(point_update[late_positions], point_damage[late_positions]),
     }
     for name, estimates in values.items():
         finite = estimates[np.isfinite(estimates)]
@@ -348,8 +331,6 @@ def main() -> None:
         physical_rows: list[dict] = []
         physical_update_rows: list[dict] = []
         ablation_rows: list[dict] = []
-        local_update_rows: list[dict] = []
-        node_update_rows: list[dict] = []
         completed = 0
 
         with torch.inference_mode():
@@ -410,76 +391,6 @@ def main() -> None:
                             )
                         )
                     previous_physical_output = physical_output
-                    if layer.layer_index > 0:
-                        for node_type in ("bus", "gen"):
-                            node_batch = batch[node_type].batch.detach().cpu()
-                            node_scenarios = batch.scenario_id.detach().cpu()[node_batch]
-                            node_devices = batch[node_type].device_id.detach().cpu()
-                            graph_updates = node_relative_l2_updates(
-                                getattr(layer, f"h_in_{node_type}"),
-                                getattr(layer, f"h_graph_{node_type}"),
-                            ).cpu()
-                            functional_updates = node_relative_l2_updates(
-                                getattr(layer, f"h_in_{node_type}"),
-                                layer.functional_state(node_type),
-                            ).cpu()
-                            if layer.feedback_used:
-                                propagated_updates = node_relative_l2_updates(
-                                    getattr(layer, f"h_in_{node_type}"),
-                                    getattr(layer, f"h_out_{node_type}"),
-                                ).cpu()
-                                feedback_updates = node_relative_l2_updates(
-                                    getattr(layer, f"h_graph_{node_type}"),
-                                    getattr(layer, f"h_out_{node_type}"),
-                                ).cpu()
-                            else:
-                                propagated_updates = feedback_updates = None
-                            node_update_rows.extend(
-                                {
-                                    "scenario_id": int(scenario_id),
-                                    "correction_step": layer.display_layer,
-                                    "node_type": node_type,
-                                    "device_id": int(device_id),
-                                    "update_relative_l2": float(functional_update),
-                                    "functional_update_relative_l2": float(functional_update),
-                                    "graph_update_relative_l2": float(graph_update),
-                                    "propagated_update_relative_l2": (
-                                        None if propagated_updates is None
-                                        else float(propagated_updates[row_index])
-                                    ),
-                                    "feedback_update_relative_l2": (
-                                        None if feedback_updates is None
-                                        else float(feedback_updates[row_index])
-                                    ),
-                                    "update_endpoint": (
-                                        "h_out" if layer.feedback_used else "h_graph_readout"
-                                    ),
-                                }
-                                for row_index, (scenario_id, device_id, functional_update, graph_update) in enumerate(zip(
-                                    node_scenarios.tolist(),
-                                    node_devices.tolist(),
-                                    functional_updates.tolist(),
-                                    graph_updates.tolist(),
-                                ))
-                            )
-                    if layer.layer_index in candidate_indices:
-                        for graph_index, scenario_id in enumerate(batch.scenario_id.tolist()):
-                            for node_type in ("bus", "gen"):
-                                graph_mask = batch[node_type].batch.detach().cpu() == graph_index
-                                metric = local_step_metrics(
-                                    getattr(layer, f"h_in_{node_type}")[graph_mask],
-                                    getattr(layer, f"h_out_{node_type}")[graph_mask],
-                                )
-                                local_update_rows.append(
-                                    {
-                                        "scenario_id": int(scenario_id),
-                                        "correction_step": layer.display_layer,
-                                        "node_type": node_type,
-                                        "update_relative_l2": metric.update_relative_l2,
-                                        "row_cosine_mean": metric.row_cosine_mean,
-                                    }
-                                )
-
                 for step_index in candidate_indices:
                     changed = adapter(
                         batch.x_dict,
@@ -593,23 +504,6 @@ def main() -> None:
             )
             .reset_index()
         )
-        local_updates = pd.DataFrame(local_update_rows)
-        node_updates = pd.DataFrame(node_update_rows)
-        expected_node_update_steps = set(range(2, layer_count + 1))
-        if set(node_updates.correction_step.unique()) != expected_node_update_steps:
-            raise ValueError("node-level updates do not cover correction steps 2-12")
-        if not np.isfinite(node_updates.update_relative_l2).all():
-            raise ValueError("node-level updates contain non-finite values")
-        local_update_summary = (
-            local_updates.groupby(["correction_step", "node_type"])
-            .agg(
-                update_relative_l2_mean=("update_relative_l2", "mean"),
-                update_relative_l2_median=("update_relative_l2", "median"),
-                update_relative_l2_p95=("update_relative_l2", lambda values: float(np.quantile(values, 0.95))),
-                row_cosine_mean=("row_cosine_mean", "mean"),
-            )
-            .reset_index()
-        )
         cka = pd.DataFrame(cka_rows)
         local = cka[
             (cka.kind == "whole_step_h_in_h_out")
@@ -617,53 +511,11 @@ def main() -> None:
         ].set_index("left_step")["value"]
         association = ablation_summary.set_index("correction_step").join(local.rename("cka"))
         association["local_change"] = 1.0 - association["cka"]
-        bus_update = local_update_summary[local_update_summary.node_type == "bus"].set_index(
-            "correction_step"
-        )
-        association = association.join(bus_update[[
-            "update_relative_l2_mean", "update_relative_l2_median", "update_relative_l2_p95"
-        ]])
         associations = bootstrap_associations(
             ablations,
-            local_updates,
             association["local_change"],
         )
         spearman = associations["cka_all"]["spearman"]
-        direct_spearman = associations["direct_all"]["spearman"]
-
-        condition_rows = []
-        for step in candidate_indices:
-            display_step = step + 1
-            paired = local_updates[
-                (local_updates.node_type == "bus")
-                & (local_updates.correction_step == display_step)
-            ][["scenario_id", "update_relative_l2"]].merge(
-                ablations[ablations.correction_step == display_step][[
-                    "scenario_id", "positive_delta_final_r_inf"
-                ]],
-                on="scenario_id",
-                validate="one_to_one",
-            )
-            threshold = float(paired.update_relative_l2.quantile(0.25))
-            bottom = paired[paired.update_relative_l2 <= threshold]
-            condition_rows.append(
-                {
-                    "correction_step": display_step,
-                    "conditions": int(len(paired)),
-                    "condition_level_spearman": rank_correlation(
-                        paired.update_relative_l2.to_numpy(float),
-                        paired.positive_delta_final_r_inf.to_numpy(float),
-                    ),
-                    "bottom_quartile_update_threshold": threshold,
-                    "bottom_quartile_conditions": int(len(bottom)),
-                    "bottom_quartile_positive_damage_rate": float(
-                        (bottom.positive_delta_final_r_inf > 0).mean()
-                    ),
-                    "bottom_quartile_damage_median": float(
-                        bottom.positive_delta_final_r_inf.median()
-                    ),
-                }
-            )
         late = range(7, 13)
         late_cka = {}
         for node in ("bus", "gen"):
@@ -684,10 +536,6 @@ def main() -> None:
         physical_update_summary.to_csv(output / "physical_update_summary.csv", index=False)
         write_csv(output / "ablation.csv", ablation_rows)
         ablation_summary.to_csv(output / "ablation_summary.csv", index=False)
-        write_csv(output / "local_updates.csv", local_update_rows)
-        local_update_summary.to_csv(output / "local_update_summary.csv", index=False)
-        node_updates.to_csv(output / "node_updates.csv", index=False, float_format="%.10g")
-        pd.DataFrame(condition_rows).to_csv(output / "condition_level_association.csv", index=False)
         write_csv(output / "cka.csv", cka_rows)
         association.reset_index().to_csv(output / "local_change_vs_importance.csv", index=False)
 
@@ -709,11 +557,8 @@ def main() -> None:
             "conditions_with_adjacent_worsening": nonmonotone,
             "late_node_centered_cka": late_cka,
             "local_change_importance_spearman": spearman,
-            "direct_update_importance_spearman": direct_spearman,
             "association_statistics": associations,
             "smallest_local_change_step": int(association.local_change.idxmin()),
-            "smallest_direct_update_step": int(association.update_relative_l2_median.idxmin()),
-            "node_update_rows": int(len(node_updates)),
             "least_ablation_damage_step": int(
                 association.mean_positive_final_delta_r_inf.idxmin()
             ),

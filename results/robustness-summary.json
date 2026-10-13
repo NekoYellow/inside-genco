@@ -27,14 +27,7 @@
       "late_local_importance_spearman": 0.09999999999999999,
       "late_local_importance_spearman_ci_low": 0.09999999999999999,
       "late_local_importance_spearman_ci_high": 0.19999999999999998,
-      "direct_update_importance_spearman": 0.8545454545454544,
-      "direct_update_importance_spearman_ci_low": 0.8545454545454544,
-      "direct_update_importance_spearman_ci_high": 0.8666666666666665,
-      "late_direct_update_importance_spearman": 0.09999999999999999,
-      "late_direct_update_importance_spearman_ci_low": 0.09999999999999999,
-      "late_direct_update_importance_spearman_ci_high": 0.19999999999999998,
       "smallest_local_change_step": 11,
-      "smallest_direct_update_step": 11,
       "least_ablation_damage_step": 8,
       "model_state_sha256": "c3c4bbf13d857bf6ff850d2fcd9eb65c5a399425f2fb0981beafc18e00abeb19"
     },
@@ -59,14 +52,7 @@
       "late_local_importance_spearman": 0.8999999999999998,
       "late_local_importance_spearman_ci_low": 0.8999999999999998,
       "late_local_importance_spearman_ci_high": 0.9999999999999999,
-      "direct_update_importance_spearman": 0.9757575757575757,
-      "direct_update_importance_spearman_ci_low": 0.9757575757575757,
-      "direct_update_importance_spearman_ci_high": 0.9878787878787878,
-      "late_direct_update_importance_spearman": 0.8999999999999998,
-      "late_direct_update_importance_spearman_ci_low": 0.8999999999999998,
-      "late_direct_update_importance_spearman_ci_high": 0.9999999999999999,
       "smallest_local_change_step": 11,
-      "smallest_direct_update_step": 11,
       "least_ablation_damage_step": 11,
       "model_state_sha256": "9d059a0a69be889f551c9a797b49c203fabf61068b752891d9fae54a5212ab64"
     },
@@ -91,14 +77,7 @@
       "late_local_importance_spearman": 0.9999999999999999,
       "late_local_importance_spearman_ci_low": 0.9999999999999999,
       "late_local_importance_spearman_ci_high": 0.9999999999999999,
-      "direct_update_importance_spearman": 0.9999999999999999,
-      "direct_update_importance_spearman_ci_low": 0.9878787878787878,
-      "direct_update_importance_spearman_ci_high": 0.9999999999999999,
-      "late_direct_update_importance_spearman": 0.9999999999999999,
-      "late_direct_update_importance_spearman_ci_low": 0.9999999999999999,
-      "late_direct_update_importance_spearman_ci_high": 0.9999999999999999,
       "smallest_local_change_step": 11,
-      "smallest_direct_update_step": 11,
       "least_ablation_damage_step": 11,
       "model_state_sha256": "b81812bcfedf0eef4edd04d7c5591b4d870d363626dfbf5af0bb662f3144641c"
     },
@@ -123,14 +102,7 @@
       "late_local_importance_spearman": 0.8999999999999998,
       "late_local_importance_spearman_ci_low": 0.8999999999999998,
       "late_local_importance_spearman_ci_high": 0.8999999999999998,
-      "direct_update_importance_spearman": 0.9878787878787878,
-      "direct_update_importance_spearman_ci_low": 0.9757575757575757,
-      "direct_update_importance_spearman_ci_high": 0.9878787878787878,
-      "late_direct_update_importance_spearman": 0.8999999999999998,
-      "late_direct_update_importance_spearman_ci_low": 0.8999999999999998,
-      "late_direct_update_importance_spearman_ci_high": 0.8999999999999998,
       "smallest_local_change_step": 11,
-      "smallest_direct_update_step": 11,
       "least_ablation_damage_step": 11,
       "model_state_sha256": "5990e188e6b44e62b070a94357d7528c164c0681c8b644852bb2123a7a8f429a"
     }
@@ -146,37 +118,10 @@
       11
     ]
   },
-  "node_activity": {
-    "definition": "per-node ||h_functional-h_in||_2 / (||h_in||_2 + 1e-12); h_functional is h_out for steps 2-11 and h_graph/readout for step 12",
-    "steps": [
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12
-    ],
-    "thresholds": [
-      0.01,
-      0.02,
-      0.05,
-      0.1,
-      0.2
-    ],
-    "summary_csv": "results/node-activity-summary.csv"
-  },
   "figures": [
     "figures/trajectories/cross_checkpoint_trajectory_and_cka.png",
+    "figures/representations/cka_multiview_heatmaps.png",
     "figures/trajectories/physical_refinement_trajectory.png",
-    "figures/interventions/representation_change_vs_importance.png",
-    "figures/interventions/direct_update_vs_importance.png",
-    "figures/node-activity/node_activity_fraction.png",
-    "figures/node-activity/node_activity_threshold_heatmap.png",
-    "figures/node-activity/node_activity_by_device.png"
+    "figures/interventions/representation_change_vs_importance.png"
   ]
 }

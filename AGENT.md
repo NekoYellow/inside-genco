@@ -59,8 +59,8 @@ The main narrative should proceed as follows:
 
 1. GENCO shares its physics loop but uses depth-specific correction blocks.
 2. Latent representation geometry stabilizes before physical feasibility converges.
-3. Bypass and feedback interventions show that late computation remains useful.
+3. Whole-correction bypass shows that late computation remains useful.
 4. Operator substitution tests whether similar latent states imply interchangeable correction blocks.
 5. Trained tied controls determine whether depth-specific parameterization improves the accuracy–parameter tradeoff.
 
-Keep early stopping and correction skipping out of the main claim. Compute-policy figures belong in supplementary material. Prefer cross-checkpoint trajectory/CKA, physical-quantity trajectories, operator-substitution matrices, and accuracy-versus-parameter plots in the main story.
+Do not retain early-stopping or compute-allocation experiments in the core repository. Keep whole-correction bypass only as a causal intervention, not as a deployment strategy. Prefer cross-checkpoint trajectory/CKA, physical-quantity trajectories, operator-substitution matrices, and accuracy-versus-parameter plots in the main story.

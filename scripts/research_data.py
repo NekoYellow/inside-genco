@@ -1,4 +1,4 @@
-"""Input-only identities and reproducible load-group splits for the case118 study."""
+"""Input-only identities and reproducible operating-condition selections."""
 import hashlib
 import json
 from pathlib import Path

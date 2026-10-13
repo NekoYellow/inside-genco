@@ -83,19 +83,11 @@ The unchanged diagonal is best for **11/11** targets. Every one of the **110** o
 
 This result supports functional specialization within the released untied checkpoint.
 
-## Final-step semantics
-
-At correction 12, the graph update and readout affect the returned prediction, but the subsequently computed feedback is never consumed. Node activity at this step is therefore measured from `h_in` to the graph/readout state `h_graph`; the dead feedback state is excluded. For corrections 2–11, the functional endpoint remains the propagated `h_out` state.
-
 ## Parameter-sharing implication and remaining test
 
 The released case118 Base model has **20,069,187** unique parameters. If correction 1 remains independent while corrections 2–12 share correction 2's graph operator and both LayerNorms, the same 12-call computation graph has **2,094,147** unique parameters, a **9.58×** reduction. Sharing the graph operator while retaining step-specific LayerNorms gives **2,109,507** parameters.
 
 These counts show that depth-specific parameterization is a substantive design decision, but they do not show that it trains better. Establishing an accuracy–parameter tradeoff requires matched training of the original untied model, a strict recurrent-tail model, and a shared-graph model with step-specific LayerNorms, using identical data splits, losses, optimization budgets, checkpoint-selection rules, and at least three seeds.
-
-## Supplementary compute-policy result
-
-A frozen exploration/confirmation experiment compares single-correction skip choices. On 51 untouched confirmation conditions, the intervention-guided choice has lower mean positive final residual damage than the CKA choice. This is useful supplementary evidence about the limitation of local similarity, but early stopping and compute reduction are not the main claim.
 
 ## Conclusion
 

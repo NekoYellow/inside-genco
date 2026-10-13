@@ -50,8 +50,6 @@ Each checkpoint run writes:
 - `step_summary.csv`: median, mean, and 95th percentile residual by correction
 - `physical_metric_summary.csv` and `physical_update_summary.csv`: long-form compact physical summaries
 - `cka.csv`: cross-correction and within-correction CKA
-- `local_updates.csv`: condition-level direct update summaries
-- `node_updates.csv`: graph, propagated, feedback, and functional endpoint updates per stable node
 - `ablation.csv`: final residual change from one-correction bypasses
 - `local_change_vs_importance.csv`: step-level association table
 - `summary.json`: compact checkpoint summary and paired bootstrap intervals
