@@ -8,6 +8,7 @@ PyYAML==6.0.3
 lightning==2.5.5
 pytorch-lightning==2.6.6
 torchmetrics==1.9.0
+mlflow==3.3.2
 matplotlib==3.10.7
 seaborn==0.13.2
 gridfm-datakit==1.0.2
