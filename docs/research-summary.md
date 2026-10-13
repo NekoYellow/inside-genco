@@ -45,7 +45,7 @@ The bus representation enters a high-similarity regime over corrections 7–12. 
 
 The coarse-to-fine physical trajectory and late bus-similarity regime recur across seeds, model widths, and network sizes. Generator behavior and temporary non-monotonicity vary more across checkpoints.
 
-## Evidence 2: local change is not local importance
+## Evidence 2: local change cannot imply importance
 
 Corrections 2–11 are bypassed one at a time as complete computational units: graph update, readout, physics decoding, residual, and feedback. Correction 1 cannot be bypassed because it changes latent width, while correction 12 owns the returned readout. Bypass damage therefore measures a correction's contribution within the remaining computation chain rather than the standalone quality of an isolated block.
 
@@ -69,19 +69,15 @@ For every target correction `t` and source correction `s` in 2–12, the operato
 
 *Figure 5 — Mean final residual damage when the target correction uses the source correction's graph Transformer and LayerNorms. Gray diagonal cells are the unchanged checkpoint; off-diagonal damage is shown on a logarithmic scale.*
 
-The unchanged diagonal is best for **11/11** targets. Every one of the **110** off-diagonal substitutions increases mean final residual: the smallest increase is **0.0105 p.u.**, the median is **0.371 p.u.**, and the maximum is **34.54 p.u.** Even neighboring late correction blocks are not freely interchangeable. This provides evidence that the released graph operators and normalization parameters jointly acquired stage-specific functions rather than merely receiving different states.
+The unchanged diagonal is best for **11/11** targets. Every one of the **110** off-diagonal substitutions increases mean final residual: the smallest increase is **0.0105 p.u.**, the median is **0.371 p.u.**, and the maximum is **34.54 p.u.** Even neighboring late correction blocks are not freely interchangeable.
 
-This result supports functional specialization within the released untied checkpoint. It does not establish that an end-to-end trained recurrent model would perform worse.
+This result supports functional specialization within the released untied checkpoint.
 
-## Final-step semantics
-
-At correction 12, the graph update and readout affect the returned prediction, but the subsequently computed feedback is never consumed. Node activity at this step is therefore measured from `h_in` to the graph/readout state `h_graph`; the dead feedback state is excluded. For corrections 2–11, the functional endpoint remains the propagated `h_out` state.
-
-## Parameter-sharing implication and remaining test
+## Parameter-sharing implication
 
 The released case118 Base model has **20,069,187** unique parameters. If correction 1 remains independent while corrections 2–12 share correction 2's graph operator and both LayerNorms, the same 12-call computation graph has **2,094,147** unique parameters, a **9.58×** reduction. Sharing the graph operator while retaining step-specific LayerNorms gives **2,109,507** parameters.
 
-These counts show that depth-specific parameterization is a substantive design decision, but they do not show that it trains better. Establishing an accuracy–parameter tradeoff requires matched training of the original untied model, a strict recurrent-tail model, and a shared-graph model with step-specific LayerNorms, using identical data splits, losses, optimization budgets, checkpoint-selection rules, and at least three seeds.
+To establish an accuracy–parameter tradeoff, we need to train these alternative architectures from scratch: the original untied model, a strict recurrent-tail model, and a shared-graph model with step-specific LayerNorms.
 
 ## Conclusion
 
