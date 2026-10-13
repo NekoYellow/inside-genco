@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize physical refinement, CKA, and bypass evidence across checkpoints."""
+"""Summarize physical refinement, CKA, node activity, and bypass evidence."""
 
 from __future__ import annotations
 
@@ -24,6 +24,38 @@ ORDER = (
     "case30_base_seed0",
 )
 COLORS = ("#264653", "#2a9d8f", "#e76f51", "#7b2cbf")
+ACTIVITY_THRESHOLDS = (0.01, 0.02, 0.05, 0.10, 0.20)
+
+
+def summarize_node_activity(updates: pd.DataFrame) -> pd.DataFrame:
+    """Average threshold activity over conditions, not over pooled node rows."""
+    keys = ["scenario_id", "node_type", "device_id", "correction_step"]
+    if updates.duplicated(keys).any():
+        raise ValueError("duplicate stable node-update identities")
+    rows = []
+    for kind in ("graph", "functional"):
+        column = f"{kind}_update_relative_l2"
+        if not np.isfinite(updates[column]).all() or (updates[column] < 0).any():
+            raise ValueError("node updates must be finite and nonnegative")
+        for (node, step), selected in updates.groupby(["node_type", "correction_step"]):
+            for threshold in ACTIVITY_THRESHOLDS:
+                fractions = (
+                    selected.assign(active=selected[column] > threshold)
+                    .groupby("scenario_id").active.mean()
+                )
+                rows.append({
+                    "kind": kind,
+                    "node_type": node,
+                    "correction_step": int(step),
+                    "threshold": threshold,
+                    "active_fraction": float(fractions.mean()),
+                    "condition_active_fraction_median": float(fractions.median()),
+                    "condition_active_fraction_p05": float(fractions.quantile(0.05)),
+                    "condition_active_fraction_p95": float(fractions.quantile(0.95)),
+                    "conditions": len(fractions),
+                    "stable_nodes": selected.device_id.nunique(),
+                })
+    return pd.DataFrame(rows)
 
 
 def save_figure(fig: plt.Figure, category: str, stem: str) -> list[str]:
@@ -40,6 +72,7 @@ def main() -> None:
     records = []
     tables = {}
     physical_tables = {}
+    activity_tables = []
     for name in ORDER:
         directory = ROOT / "outputs/trajectory-analysis" / name
         manifest = json.loads((directory / "manifest.json").read_text())
@@ -50,6 +83,30 @@ def main() -> None:
         association = pd.read_csv(directory / "local_change_vs_importance.csv")
         physical_metrics = pd.read_csv(directory / "physical_metric_summary.csv")
         physical_updates = pd.read_csv(directory / "physical_update_summary.csv")
+        node_updates = pd.read_csv(directory / "node_updates.csv")
+        expected_steps = set(range(2, 13))
+        for node in ("bus", "gen"):
+            selected = node_updates[node_updates.node_type == node]
+            if set(selected.correction_step) != expected_steps:
+                raise ValueError(f"incomplete node-update steps: {name}/{node}")
+            identities = selected.groupby("correction_step").apply(
+                lambda frame: set(zip(frame.scenario_id, frame.device_id)), include_groups=False
+            )
+            if any(keys != identities.iloc[0] for keys in identities):
+                raise ValueError(f"node-update identities change across steps: {name}/{node}")
+            if selected.scenario_id.nunique() != summary["conditions"]:
+                raise ValueError(f"incomplete node-update conditions: {name}/{node}")
+        last = node_updates[node_updates.correction_step == 12]
+        if set(last.functional_endpoint) != {"h_graph"} or not np.array_equal(
+            last.graph_update_relative_l2.to_numpy(), last.functional_update_relative_l2.to_numpy()
+        ):
+            raise ValueError(f"final node activity includes unconsumed feedback: {name}")
+        if set(node_updates.loc[node_updates.correction_step < 12, "functional_endpoint"]) != {"h_out"}:
+            raise ValueError(f"invalid propagated node endpoint: {name}")
+        activity = summarize_node_activity(node_updates)
+        activity.insert(0, "label", config[name]["label"])
+        activity.insert(0, "variant", name)
+        activity_tables.append(activity)
         if set(physical_metrics.correction_step.unique()) != set(range(1, 13)):
             raise ValueError(f"physical-metric steps are incomplete: {name}")
         if set(physical_updates.correction_step.unique()) != set(range(2, 13)):
@@ -84,6 +141,8 @@ def main() -> None:
             }
         )
     frame = pd.DataFrame(records)
+    activity = pd.concat(activity_tables, ignore_index=True)
+    activity.to_csv(ROOT / "results/node-activity-summary.csv", index=False)
     frame.to_csv(ROOT / "results/robustness-summary.csv", index=False)
     physical_result_rows = []
     for row in records:
@@ -179,6 +238,20 @@ def main() -> None:
     colorbar = fig.colorbar(heatmap, ax=axes, shrink=0.88, pad=0.02)
     colorbar.set_label("Linear CKA")
     cka_figures = save_figure(fig, "representations", "cka_multiview_heatmaps")
+
+    primary_activity = activity[(activity.variant == ORDER[0]) & (activity.kind == "graph")]
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.5), constrained_layout=True)
+    threshold_colors = plt.cm.viridis(np.linspace(0.08, 0.92, len(ACTIVITY_THRESHOLDS)))
+    for ax, node, title in zip(axes, ("bus", "gen"), ("Bus graph updates", "Generator graph updates")):
+        for threshold, color in zip(ACTIVITY_THRESHOLDS, threshold_colors):
+            selected = primary_activity[(primary_activity.node_type == node) & (primary_activity.threshold == threshold)].sort_values("correction_step")
+            ax.plot(selected.correction_step, selected.active_fraction, marker="o", color=color, label=fr"$\tau={threshold:g}$")
+        ax.set(title=title, xlabel="Correction step", ylabel="Mean fraction of nodes above threshold", xticks=range(2, 13), ylim=(-0.03, 1.03))
+        ax.grid(color="#e5e7eb", linewidth=0.65)
+        ax.spines[["top", "right"]].set_visible(False)
+    axes[1].legend(frameon=False)
+    fig.suptitle("Node activity within stable geometry · case118 Base seed 0")
+    activity_figures = save_figure(fig, "node-activity", "node_activity_fraction")
 
     primary_metrics, primary_physical_updates = physical_tables[ORDER[0]]
     fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.6), constrained_layout=True)
@@ -281,7 +354,15 @@ def main() -> None:
             "resampling_unit": "operating condition",
             "late_steps": [7, 8, 9, 10, 11],
         },
-        "figures": trajectory_figures + cka_figures + physical_figures + importance_figures,
+        "node_activity": {
+            "definition": "per-node ||h_end-h_in||_2 / (||h_in||_2 + 1e-12)",
+            "main_figure_endpoint": "h_graph at every step (before physics feedback)",
+            "functional_endpoint": "h_out at steps 2-11; h_graph at step 12",
+            "steps": list(range(2, 13)), "thresholds": list(ACTIVITY_THRESHOLDS),
+            "aggregation": "mean per-condition fraction of nodes strictly above threshold",
+            "summary_csv": "results/node-activity-summary.csv",
+        },
+        "figures": trajectory_figures + cka_figures + activity_figures + physical_figures + importance_figures,
     }
     (ROOT / "results/robustness-summary.json").write_text(
         json.dumps(result, indent=2, allow_nan=False) + "\n"

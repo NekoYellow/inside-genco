@@ -92,6 +92,18 @@ def rows_by_scenario(rows: list[dict]) -> dict[int, dict]:
     return result
 
 
+def node_relative_update(before: torch.Tensor, after: torch.Tensor) -> torch.Tensor:
+    """One relative L2 change per aligned node; exclude width-changing steps."""
+    if before.ndim != 2 or before.shape != after.shape:
+        raise ValueError("node updates require aligned, equal-width states")
+    before, after = before.detach().cpu().double(), after.detach().cpu().double()
+    if not torch.isfinite(before).all() or not torch.isfinite(after).all():
+        raise ValueError("node update states must be finite")
+    return torch.linalg.vector_norm(after - before, dim=1) / (
+        torch.linalg.vector_norm(before, dim=1) + 1e-12
+    )
+
+
 def physical_step_change_rows(
     previous: dict[str, torch.Tensor],
     current: dict[str, torch.Tensor],
@@ -331,6 +343,7 @@ def main() -> None:
         physical_rows: list[dict] = []
         physical_update_rows: list[dict] = []
         ablation_rows: list[dict] = []
+        node_update_rows: list[dict] = []
         completed = 0
 
         with torch.inference_mode():
@@ -358,6 +371,22 @@ def main() -> None:
                         for stage in ("h_in", "h_graph", "h_out"):
                             states[node][stage][layer.layer_index].append(
                                 getattr(layer, f"{stage}_{node}").double()
+                            )
+                        if layer.layer_index > 0:
+                            before = getattr(layer, f"h_in_{node}")
+                            graph = getattr(layer, f"h_graph_{node}")
+                            endpoint = "h_graph" if layer.layer_index == layer_count - 1 else "h_out"
+                            functional = getattr(layer, f"{endpoint}_{node}")
+                            graph_update = node_relative_update(before, graph)
+                            functional_update = node_relative_update(before, functional)
+                            keys, _ = stable_rows(batch, node)
+                            node_update_rows.extend(
+                                dict(scenario_id=scenario, device_id=device, node_type=node,
+                                     correction_step=layer.display_layer,
+                                     graph_update_relative_l2=float(graph_update[index]),
+                                     functional_update_relative_l2=float(functional_update[index]),
+                                     functional_endpoint=endpoint)
+                                for index, (scenario, device) in enumerate(keys)
                             )
                     step_rows, _ = scenario_metrics(
                         {"bus": layer.x_bus, "gen": layer.x_gen},
@@ -537,6 +566,7 @@ def main() -> None:
         write_csv(output / "ablation.csv", ablation_rows)
         ablation_summary.to_csv(output / "ablation_summary.csv", index=False)
         write_csv(output / "cka.csv", cka_rows)
+        write_csv(output / "node_updates.csv", node_update_rows)
         association.reset_index().to_csv(output / "local_change_vs_importance.csv", index=False)
 
         summary = {
@@ -550,6 +580,13 @@ def main() -> None:
             "layers": layer_count,
             "hidden_size": int(config.model.hidden_size),
             "parameters": int(sum(parameter.numel() for parameter in task.parameters())),
+            "node_activity": {
+                "rows": len(node_update_rows),
+                "steps": list(range(2, layer_count + 1)),
+                "definition": "per-node ||h_end-h_in||_2 / (||h_in||_2 + 1e-12)",
+                "graph_endpoint": "h_graph at every step",
+                "functional_endpoint": "h_out at steps 2-11; h_graph at step 12",
+            },
             "r_inf_median_by_step": {
                 str(int(row.correction_step)): float(row.median)
                 for row in step_summary.itertuples()

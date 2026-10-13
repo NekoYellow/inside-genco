@@ -6,13 +6,42 @@ import sys
 import unittest
 
 import pandas as pd
+import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from run_trajectory_analysis import bootstrap_associations
+from run_trajectory_analysis import bootstrap_associations, node_relative_update
 from run_operator_substitution import parse_steps, summarize_substitutions
+from summarize_trajectory_analysis import summarize_node_activity
 
 
 class RobustnessStatisticsTests(unittest.TestCase):
+    def test_node_update_uses_per_node_relative_norm(self) -> None:
+        before = torch.tensor([[3., 4.], [0., 2.]])
+        after = torch.tensor([[6., 8.], [0., 3.]])
+        torch.testing.assert_close(
+            node_relative_update(before, after), torch.tensor([1., .5], dtype=torch.float64)
+        )
+        with self.assertRaisesRegex(ValueError, "equal-width"):
+            node_relative_update(before, after[:, :1])
+        with self.assertRaisesRegex(ValueError, "finite"):
+            node_relative_update(before, after * float("nan"))
+
+    def test_activity_weights_conditions_equally_and_threshold_is_strict(self) -> None:
+        updates = pd.DataFrame([
+            dict(scenario_id=scenario, device_id=device, node_type="bus", correction_step=2,
+                 graph_update_relative_l2=value, functional_update_relative_l2=value)
+            for scenario, device, value in ((1, 1, .01), (1, 2, .02), (2, 1, .03))
+        ])
+        result = summarize_node_activity(updates)
+        graph = result[result.kind == "graph"].set_index("threshold")
+        self.assertAlmostEqual(graph.loc[.01, "active_fraction"], .75)
+        self.assertAlmostEqual(graph.loc[.02, "active_fraction"], .5)
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            summarize_node_activity(pd.concat([updates, updates.iloc[:1]]))
+        updates.loc[0, "graph_update_relative_l2"] = float("nan")
+        with self.assertRaisesRegex(ValueError, "finite"):
+            summarize_node_activity(updates)
+
     def setUp(self) -> None:
         steps = list(range(2, 12))
         scenarios = list(range(6))

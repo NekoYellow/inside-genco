@@ -118,9 +118,37 @@
       11
     ]
   },
+  "node_activity": {
+    "definition": "per-node ||h_end-h_in||_2 / (||h_in||_2 + 1e-12)",
+    "main_figure_endpoint": "h_graph at every step (before physics feedback)",
+    "functional_endpoint": "h_out at steps 2-11; h_graph at step 12",
+    "steps": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "thresholds": [
+      0.01,
+      0.02,
+      0.05,
+      0.1,
+      0.2
+    ],
+    "aggregation": "mean per-condition fraction of nodes strictly above threshold",
+    "summary_csv": "results/node-activity-summary.csv"
+  },
   "figures": [
     "figures/trajectories/cross_checkpoint_trajectory_and_cka.png",
     "figures/representations/cka_multiview_heatmaps.png",
+    "figures/node-activity/node_activity_fraction.png",
     "figures/trajectories/physical_refinement_trajectory.png",
     "figures/interventions/representation_change_vs_importance.png"
   ]

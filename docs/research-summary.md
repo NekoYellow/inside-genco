@@ -39,11 +39,19 @@ For case118 Base seed 0, median maximum power-balance residual falls from **23.6
 
 The bus representation enters a high-similarity regime over corrections 7–12. Mean off-diagonal node-centered CKA is **0.9957** for buses, while generator CKA is **0.9118**. The latent representation therefore stabilizes before physical feasibility has converged. This is more precise than saying only that CKA is high while later corrections remain useful.
 
+![Node activity within stable geometry](../figures/node-activity/node_activity_fraction.png)
+
+*Figure 3 — Fraction of bus/generator nodes whose graph-block relative update exceeds each threshold, averaged equally over all conditions in the primary checkpoint.*
+
+Node activity clarifies what this stabilization does—and does not—mean. For each node, we measure the relative update magnitude `||h_graph − h_in||₂ / (||h_in||₂ + 1e−12)` at corrections 2–12, consistently before physics feedback. Correction 1 is excluded because it changes feature width. Unlike cross-correction CKA, this measure asks how much each graph block moves its input, not how similar the geometry of successive graph outputs is.
+
+At the 1% threshold, **100%** of bus nodes remain active at correction 11 and **99.55%** at correction 12. At the 5% threshold, both fractions are **0%**. Meanwhile, every generator node exceeds a 20% graph update throughout corrections 7–12. Thus, high late bus CKA coexists with widespread small node updates, while generators retain substantially larger relative updates. The apparent disappearance of bus activity at a higher threshold reflects diminishing update magnitude instead a set of completely inactive nodes.
+
 ![Cross-checkpoint trajectory](../figures/trajectories/cross_checkpoint_trajectory_and_cka.png)
 
-*Figure 3 — Median physical trajectory and late node-centered CKA for released checkpoints.*
+*Figure 4 — Median physical trajectory and late node-centered CKA for released checkpoints.*
 
-The coarse-to-fine physical trajectory and late bus-similarity regime recur across seeds, model widths, and network sizes. Generator behavior and temporary non-monotonicity vary more across checkpoints.
+The coarse-to-fine physical trajectory and late bus-similarity regime recur across seeds, model widths, and network sizes. Generator behavior and temporary non-monotonicity vary more across checkpoints. Absolute node-activity fractions are also checkpoint- and threshold-dependent: the primary checkpoint's near-universal late bus activity at 1% is not a universal result across checkpoints. The multi-checkpoint activity summaries are retained in `results/node-activity-summary.csv`.
 
 ## Evidence 2: local change cannot imply importance
 
@@ -51,7 +59,7 @@ Corrections 2–11 are bypassed one at a time as complete computational units: g
 
 ![Representation change versus bypass damage](../figures/interventions/representation_change_vs_importance.png)
 
-*Figure 4 — CKA geometry change along the normal trajectory versus mean positive final residual damage from a whole-correction bypass.*
+*Figure 5 — CKA geometry change along the normal trajectory versus mean positive final residual damage from a whole-correction bypass.*
 
 Across the full corrections 2–11 trajectory, CKA change and bypass damage are strongly associated in all checkpoints. In the primary checkpoint, their step-level Spearman correlation is **0.855**. Restricted to late corrections 7–11, however, it falls to **0.10**: correction 11 has the smallest CKA change, whereas correction 8 has the smallest bypass damage.
 
@@ -63,7 +71,7 @@ For every target correction `t` and source correction `s` in 2–12, the operato
 
 ![Cross-correction operator substitution](../figures/operators/operator_substitution_matrix.png)
 
-*Figure 5 — Mean final residual damage when the target correction uses the source correction's graph Transformer and LayerNorms.*
+*Figure 6 — Mean final residual damage when the target correction uses the source correction's graph Transformer and LayerNorms.*
 
 The unchanged diagonal is best for **11/11** targets. Every one of the **110** off-diagonal substitutions increases mean final residual: the smallest increase is **0.0105 p.u.**, the median is **0.371 p.u.**, and the maximum is **34.54 p.u.** Even neighboring late correction blocks are not freely interchangeable.
 
@@ -77,4 +85,4 @@ To establish an accuracy–parameter tradeoff, we need to train these alternativ
 
 ## Conclusion
 
-The evidence suggests that GENCO's 12 corrections are not interchangeable iterations of a stationary operator, but a learned sequence of specialized refinement stages. Bus latent geometry stabilizes before physical feasibility converges; late corrections can remain functionally important despite small representational change; and replacing a correction block with one learned at another depth consistently damages the final solution. An experiment to train GENCO of alternative architectures from scratch could answer whether this specialization also yields a better accuracy–parameter tradeoff than recurrent sharing.
+The evidence suggests that GENCO's 12 corrections are not interchangeable iterations of a stationary operator, but a learned sequence of specialized refinement stages. Bus latent geometry stabilizes before physical feasibility converges, and this stable geometry still coexists with widespread small node updates. Late corrections can remain functionally important despite small representational change, and replacing a correction block with one learned at another depth consistently damages the final solution. An experiment to train GENCO of alternative architectures from scratch could answer whether this specialization also yields a better accuracy–parameter tradeoff than recurrent sharing.
