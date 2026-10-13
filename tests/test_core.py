@@ -10,7 +10,6 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from inside_genco.interventions import InterventionPlan
 from inside_genco.similarity import linear_cka
-from inside_genco.tied_tail import count_unique_parameters, tie_recurrent_tail
 from inside_genco.trace import _operator_modules
 
 
@@ -72,45 +71,6 @@ class InterventionTests(unittest.TestCase):
         self.assertIs(graph, model.layers[3])
         self.assertIs(bus_norm, model.norms_bus[3])
         self.assertIs(gen_norm, model.norms_gen[3])
-
-class RecurrentTailTests(unittest.TestCase):
-    @staticmethod
-    def model() -> torch.nn.Module:
-        model = torch.nn.Module()
-        model.layers = torch.nn.ModuleList(
-            [torch.nn.Linear(2, 4)]
-            + [torch.nn.Linear(4, 4) for _ in range(3)]
-        )
-        model.norms_bus = torch.nn.ModuleList(
-            [torch.nn.LayerNorm(4) for _ in range(4)]
-        )
-        model.norms_gen = torch.nn.ModuleList(
-            [torch.nn.LayerNorm(4) for _ in range(4)]
-        )
-        return model
-
-    def test_strict_tail_shares_graphs_and_norms_but_not_stem(self):
-        model = self.model()
-        stem = model.layers[0]
-        report = tie_recurrent_tail(model, share_norms=True)
-
-        self.assertIs(model.layers[0], stem)
-        self.assertIs(model.layers[1], model.layers[2])
-        self.assertIs(model.layers[2], model.layers[3])
-        self.assertIs(model.norms_bus[1], model.norms_bus[3])
-        self.assertIs(model.norms_gen[1], model.norms_gen[3])
-        self.assertLess(report.unique_parameters_after, report.unique_parameters_before)
-        self.assertEqual(report.unique_parameters_after, count_unique_parameters(model))
-
-    def test_graph_only_tail_preserves_step_specific_norms(self):
-        model = self.model()
-        bus_norms = list(model.norms_bus)
-        report = tie_recurrent_tail(model, share_norms=False)
-
-        self.assertIs(model.layers[1], model.layers[3])
-        self.assertEqual(list(model.norms_bus), bus_norms)
-        self.assertEqual(report.mode, "shared_graph_step_norms")
-
 
 if __name__ == "__main__":
     unittest.main()

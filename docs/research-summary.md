@@ -1,6 +1,6 @@
 # Inside GENCO: Stage-Specific Computation in a Learned Physics Solver
 
-GENCO solves power flow through a sequence of 12 corrections. Although the output heads, physics decoder, and residual-to-latent feedback MLP are shared across steps, each correction has its own graph Transformer and bus/generator LayerNorm parameters. An obvious alternative would be to apply a single shared correction block recurrently after the initial width-changing stem. Such a design would be more parameter-efficient and could, in principle, support a flexible number of refinement steps. This contrast motivates our central question: does GENCO merely apply a stationary correction rule to a changing state, or **has it learned a stage-specific correction process in which different depths perform distinct refinement functions?**
+GENCO solves power flow through a sequence of 12 corrections. Although the output heads, physics decoder, and residual-to-latent feedback MLP are shared across steps, each correction has its own graph Transformer and bus/generator LayerNorm parameters. An obvious alternative would be to apply a single shared correction block recurrently after the initial width-changing stem. Such a design would be more parameter-efficient and could, in principle, support a flexible number of refinement steps. This contrast motivates our central question: does GENCO merely apply a stationary correction rule to a changing state, or has it learned a stage-specific correction schedule in which different depths perform distinct refinement functions?
 
 This question separates into three testable parts:
 
@@ -12,29 +12,15 @@ The third question is essential. Different behavior at different depths does not
 
 ## Mechanistic evidence overview
 
-```text
-GENCO's 12-correction process
-            │
-            ▼
-Do latent and physical states converge together?
-            │
-            ▼
-No: latent geometry stabilizes before physical feasibility
-            │
-            ▼
-Does latent stability imply low functional importance?
-            │
-            ▼
-No: late corrections still improve the final physical solution
-            │
-            ▼
-Are correction blocks interchangeable across depth?
-            │
-            ▼
-No: cross-step substitution consistently damages the solution
-            │
-            ▼
-GENCO learned a sequence of specialized refinement stages
+```mermaid
+flowchart TD
+    A["GENCO's 12-correction process"] --> B["Do latent and physical states converge together?"]
+    B --> C["No: latent geometry stabilizes before physical feasibility"]
+    B --> D["Does latent stability imply low functional importance?"]
+    D --> E["No: late corrections still improve the final physical solution"]
+    D --> F["Are correction blocks interchangeable across depth?"]
+    F --> G["No: cross-step substitution consistently damages the solution"]
+    F --> H["GENCO learned a sequence of specialized refinement stages"]
 ```
 
 ## Evidence 1: latent stabilization precedes physical convergence
@@ -43,7 +29,7 @@ The primary experiment uses the released case118 Base seed-0 checkpoint on 115 f
 
 ![Step-wise physical refinement](../figures/trajectories/physical_refinement_trajectory.png)
 
-*Figure 1 — Median active/reactive bus mismatch and adjacent decoded-variable movement for case118 Base seed 0. Adjacent movements are normalized by their correction-2 medians, and absolute values are retained in the result table.*
+*Figure 1 — Median active/reactive bus mismatch and adjacent decoded-variable movement for case118 Base seed 0. Adjacent movements are normalized by their correction-2 medians only for display; absolute values are retained in the result table.*
 
 For case118 Base seed 0, median maximum power-balance residual falls from **23.6794** after correction 1 to **1.1603** after correction 2, **0.07267** after correction 7, and **0.003134** after correction 12. Median active bus mismatch falls from **1.152 MW** after correction 7 to **0.0885 MW** after correction 12; reactive mismatch falls from **0.2268 Mvar** to **0.00973 Mvar**. Voltage and bus-injection movements shrink strongly, while generator active-power adjustments remain stage-dependent rather than decaying monotonically.
 
@@ -51,7 +37,7 @@ For case118 Base seed 0, median maximum power-balance residual falls from **23.6
 
 *Figure 2 — Pairwise CKA between corrections for the primary checkpoint, before and after removing each node's mean feature.*
 
-The bus representation enters a high-similarity regime over corrections 7–12. Mean off-diagonal node-centered CKA is **0.9957** for buses, while generator CKA is **0.9118**. The latent representation geometry therefore stabilizes before physical feasibility has converged.
+The bus representation enters a high-similarity regime over corrections 7–12. Mean off-diagonal node-centered CKA is **0.9957** for buses, while generator CKA is **0.9118**. The latent representation therefore stabilizes before physical feasibility has converged. This is more precise than saying only that CKA is high while later corrections remain useful.
 
 ![Cross-checkpoint trajectory](../figures/trajectories/cross_checkpoint_trajectory_and_cka.png)
 
@@ -59,7 +45,7 @@ The bus representation enters a high-similarity regime over corrections 7–12. 
 
 The coarse-to-fine physical trajectory and late bus-similarity regime recur across seeds, model widths, and network sizes. Generator behavior and temporary non-monotonicity vary more across checkpoints.
 
-## Evidence 2: local change cannot imply importance
+## Evidence 2: local change is not local importance
 
 Corrections 2–11 are bypassed one at a time as complete computational units: graph update, readout, physics decoding, residual, and feedback. Correction 1 cannot be bypassed because it changes latent width, while correction 12 owns the returned readout. Bypass damage therefore measures a correction's contribution within the remaining computation chain rather than the standalone quality of an isolated block.
 
@@ -69,9 +55,13 @@ Corrections 2–11 are bypassed one at a time as complete computational units: g
 
 Across the full corrections 2–11 trajectory, CKA change and bypass damage are strongly associated in all four checkpoints. In the primary checkpoint, their step-level Spearman correlation is **0.855**. Restricted to late corrections 7–11, however, it falls to **0.10**: correction 11 has the smallest CKA change, whereas correction 8 has the smallest bypass damage.
 
-We may thus conclude that, CKA captures correction importance over the global trajectory but fails as a local late-stage criterion in the primary checkpoint.
+The appropriate conclusion is therefore:
 
-## Evidence 3: correction operators are stage-specialized
+*> CKA captures correction importance over the global trajectory but fails as a local late-stage criterion in the primary checkpoint.*
+
+It should not be described as a general importance predictor.
+
+## Evidence 3: learned correction blocks are not interchangeable
 
 For every target correction `t` and source correction `s` in 2–12, the operator-substitution experiment runs the normal chain while replacing the target's graph Transformer and both LayerNorms with those learned at the source depth. The diagonal is the unchanged checkpoint. This intervention preserves the state arriving at depth `t` and directly tests whether similar latent geometry also implies correction-block interchangeability.
 
@@ -79,9 +69,13 @@ For every target correction `t` and source correction `s` in 2–12, the operato
 
 *Figure 5 — Mean final residual damage when the target correction uses the source correction's graph Transformer and LayerNorms. Gray diagonal cells are the unchanged checkpoint; off-diagonal damage is shown on a logarithmic scale.*
 
-The unchanged diagonal is best for **11/11** targets. Every one of the **110** off-diagonal substitutions increases mean final residual: the smallest increase is **0.0105 p.u.**, the median is **0.371 p.u.**, and the maximum is **34.54 p.u.** Even neighboring late correction blocks are not freely interchangeable. This provides evidence that the released graph operators and normalization parameters jointly acquired stage-specific functions.
+The unchanged diagonal is best for **11/11** targets. Every one of the **110** off-diagonal substitutions increases mean final residual: the smallest increase is **0.0105 p.u.**, the median is **0.371 p.u.**, and the maximum is **34.54 p.u.** Even neighboring late correction blocks are not freely interchangeable. This provides evidence that the released graph operators and normalization parameters jointly acquired stage-specific functions rather than merely receiving different states.
 
-This result supports functional specialization within the released untied checkpoint.
+This result supports functional specialization within the released untied checkpoint. It does not establish that an end-to-end trained recurrent model would perform worse.
+
+## Final-step semantics
+
+At correction 12, the graph update and readout affect the returned prediction, but the subsequently computed feedback is never consumed. Node activity at this step is therefore measured from `h_in` to the graph/readout state `h_graph`; the dead feedback state is excluded. For corrections 2–11, the functional endpoint remains the propagated `h_out` state.
 
 ## Parameter-sharing implication and remaining test
 
@@ -91,4 +85,4 @@ These counts show that depth-specific parameterization is a substantive design d
 
 ## Conclusion
 
-The evidence suggests that GENCO's 12 corrections are not interchangeable iterations of a stationary operator, but a learned sequence of specialized refinement stages. Bus latent geometry stabilizes before physical feasibility converges; late corrections can remain functionally important despite small representational change; and replacing a correction block with one learned at another depth consistently damages the final solution. The remaining matched-training experiment will determine whether this specialization also yields a better accuracy–parameter tradeoff than recurrent sharing.
+The evidence suggests that GENCO's 12 corrections are not interchangeable iterations of a stationary operator, but a learned sequence of specialized refinement stages. Bus latent geometry stabilizes before physical feasibility converges; late corrections can remain functionally important despite small representational change; and replacing a correction block with one learned at another depth consistently damages the final solution. An experiment to train GENCO of alternative architectures from scratch could answer whether this specialization also yields a better accuracy–parameter tradeoff than recurrent sharing.
