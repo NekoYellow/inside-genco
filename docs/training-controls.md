@@ -30,6 +30,8 @@ bash scripts/setup_env.sh cpu
 .venv/bin/python scripts/prepare_training_controls.py
 ```
 
+The environment pins `juliacall==0.9.35` with `juliapkg==0.1.25` because `gridfm-datakit==1.0.2` imports the legacy `juliapkg.deps.run_julia` API, which was renamed in `juliapkg` 0.1.26.
+
 To inspect one resolved plan without starting training:
 
 ```bash
