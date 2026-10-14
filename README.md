@@ -1,10 +1,10 @@
 # Inside GENCO: Stage-Specific Computation in a Learned Physics Solver
 
-This project conducts an inference-only study on the computation inside [GENCO](https://arxiv.org/abs/2608.09921), a grid foundation model. GENCO shares its output heads, physics decoder, and residual-to-latent feedback, while each of its 12 corrections has a separate graph Transformer and bus/generator LayerNorm. We explore what those correction blocks do to get a feasible solution, and whether they perform interchangeable iterations or specialized refinement stages.
+This project looks inside [GENCO](https://arxiv.org/abs/2608.09921), a grid foundation model that refines a power-flow solution step by step. Each correction has its own graph-processing block, while the steps share the machinery that reads out the answer and feeds physical errors back into the model. We ask what each step contributes, and whether similar refinement could be learned by repeatedly reusing one block.
 
 ## Findings
 
-### The model can look settled before the answer is ready
+### How a solution evloves throughout GENCO
 
 The model's internal patterns become similar across later steps, but its answer keeps getting closer to satisfying the grid's physical constraints.
 
@@ -12,25 +12,25 @@ The model's internal patterns become similar across later steps, but its answer 
 
 ![Cross-correction representation similarity](figures/representations/cka_multiview_heatmaps.png)
 
-### Small changes are still happening across the grid
-
 Even when the overall internal pattern looks stable, many nodes can still receive small updates.
 
 ![Node activity across thresholds](figures/node-activity/node_activity_fraction.png)
 
-### A quiet-looking step can still matter
-
-We skip individual steps and check how the final answer changes. A step that barely changes the model's internal pattern can still help the solution.
+Besides, we skip individual steps and check how the final answer changes. A step that barely changes the model's internal pattern can still help the solution.
 
 ![Representation change versus whole-correction bypass damage](figures/interventions/representation_change_vs_importance.png)
 
-### Different steps are not simply interchangeable
+### Different steps represent different roles
 
 We replace a step's learned processing block with one from another step. These swaps make the final answers worse on average in the model tested, supporting the idea that different steps have learned different roles.
 
 ![Operator substitution](figures/operators/operator_substitution_matrix.png)
 
-We check how the solution develops, how nodes change, and what happens when steps are skipped across several released models. See the [research summary](docs/research-summary.md) for experiment details.
+The released model has learned different roles for its steps. But could a shared block learn to refine the changing state just as well? With limited compute, we trained small models with separate or shared blocks. They achieved similar performance and showed similar patterns of internal refinement, while the shared models used far fewer parameters.
+
+![Representation similarity across separately trained architectures](figures/training-controls/cka_raw_best_seeds.png)
+
+This makes recurrent sharing a promising direction to explore: keep refining the solution while reusing the same learned machinery. The [research summary](docs/research-summary.md) connects this result to looped Transformers and explains the experiments.
 
 ## Reproduce
 
