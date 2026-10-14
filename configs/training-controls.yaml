@@ -1,0 +1,39 @@
+schema_version: 1
+name: case118-small-reduced-stage-specialization
+source_config: assets/model/case118_ieee/small/seed0/case118_ieee_small_seed0.yaml
+source_split_json: assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json
+normalizer_stats: assets/model/case118_ieee/base/seed0/normalizer_stats.pt
+data_path: assets/data
+output_root: outputs/training-controls-small-reduced
+seeds: [0, 1]
+subset:
+  seed: 20261014
+  train_group_fraction: 0.1
+  val_group_fraction: 0.1
+  group_column: load_scenario_idx
+architectures:
+  untied:
+    model_type: GNS_heterogeneous
+  tied_tail:
+    model_type: GNS_heterogeneous_tied_tail
+  shared_graph_step_norms:
+    model_type: GNS_heterogeneous_shared_graph_step_norms
+budget:
+  epochs: 50
+  early_stopping_patience: 51
+checkpoint_selection:
+  monitor: Validation layer_11_residual
+  mode: min
+invariants:
+  corrections: 12
+  hidden_size: 24
+  attention_heads: 8
+  batch_size: 64
+  losses: [LayeredWeightedPhysics, MaskedBusMSE]
+  loss_weights: [0.1, 0.9]
+  optimizer: AdamW
+  learning_rate: 0.0005
+  beta1: 0.9
+  beta2: 0.999
+  lr_decay: 0.7
+  lr_patience: 5

@@ -9,12 +9,20 @@ import pandas as pd
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from run_trajectory_analysis import bootstrap_associations, node_relative_update
+from run_trajectory_analysis import bootstrap_associations, node_relative_update, center_by_device
 from run_operator_substitution import parse_steps, summarize_substitutions
 from summarize_trajectory_analysis import summarize_node_activity
 
 
 class RobustnessStatisticsTests(unittest.TestCase):
+    def test_node_centering_removes_device_offsets_across_conditions(self) -> None:
+        devices = torch.tensor([1, 2, 1, 2])
+        values = torch.tensor([[10., 20.], [100., 200.], [12., 24.], [106., 208.]])
+        expected = torch.tensor([[-1., -2.], [-3., -4.], [1., 2.], [3., 4.]], dtype=torch.float64)
+        torch.testing.assert_close(center_by_device(values, devices), expected)
+        with self.assertRaisesRegex(ValueError, "every device"):
+            center_by_device(values[:3], devices[:3])
+
     def test_node_update_uses_per_node_relative_norm(self) -> None:
         before = torch.tensor([[3., 4.], [0., 2.]])
         after = torch.tensor([[6., 8.], [0., 3.]])

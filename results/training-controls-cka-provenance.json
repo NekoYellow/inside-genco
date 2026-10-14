@@ -1,0 +1,705 @@
+[
+  {
+    "schema_version": 1,
+    "status": "complete",
+    "created_at_utc": "2026-10-14T16:09:50.860099+00:00",
+    "variant": {
+      "label": "untied-seed0-to100",
+      "network": "case118_ieee",
+      "size": "Small",
+      "seed": 0,
+      "model_dir": "/Users/yyh/Desktop/inside-genco/assets/model/case118_ieee/small/seed0",
+      "raw_dir": "/Users/yyh/Desktop/inside-genco/assets/data/case118_ieee/raw",
+      "split": "/Users/yyh/Desktop/inside-genco/assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json",
+      "selection": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "data_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+      "model_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/cross-network-assets.lock.json",
+      "name": "untied_seed0"
+    },
+    "selection": {
+      "path": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "sha256": "018559ffab4266e3bcf255ce4bf942fdc14183b288863de66c617f00d9de16e0",
+      "name": "all",
+      "research_split": "all",
+      "dependencies": {
+        "assets/manifests/case118-assets.lock.json": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+        "assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json": "227909485377cff58831dc4fcd3e586ba820f5af6619d979faff5af6f0e99c1a",
+        "assets/operating-conditions/case118/scenario_index.csv": "c13eaeeb9deb0cc57a1b6512017d98f7a03bcc1f59443e487c366a45106dc619",
+        "assets/operating-conditions/case118/group_splits.json": "ed65e2d87242bd2fe7d1f3ef8dfe5bf24902414e426f36eda8385f2d051ecbec"
+      },
+      "research_splits": [
+        "exploration",
+        "confirmation",
+        "reserve"
+      ]
+    },
+    "conditions": 115,
+    "config_sha256": "b6f0e603d394f0ac9e17528a487756c1975ee439820d71132387bb353de817fc",
+    "data_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+    "model_lock_sha256": "c8bb3515f4749671249017013a579eda74b4d3089730c1333903f739ce55e4e2",
+    "device": "cpu",
+    "forward_dtype": "float32",
+    "metric_dtype": "float64",
+    "threads": 4,
+    "cka_only": true,
+    "training_manifest": "outputs/training-controls-small-reduced/resume-to-100/runs/untied/seed0/manifest.json",
+    "training_manifest_sha256": "4d3d015bb54be37540e76dc8f53d61003181fc568a10dcd4adb763e4eed18fc0",
+    "training_source": {
+      "schema_version": 1,
+      "status": "complete",
+      "created_at_utc": "2026-10-14T06:11:47.601320+00:00",
+      "platform": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+      "research_git_commit": "0c452f28b099ac6b4cde2c7190a99c47d48ba4fe",
+      "plan": {
+        "architecture": "untied",
+        "seed": 0,
+        "config": "outputs/training-controls-small-reduced/resume-to-100/runs/untied/seed0/config.yaml",
+        "config_sha256": "38e9975d10e39f25f70051cf61463fda60793e93a2063e34bb75604cee8fa9f5",
+        "fixed_split_manifest_sha256": "de77a14bf32c19fc94505fe6ccfafc526c32f0e143869d59411b9cba7fe0f5af",
+        "normalizer_stats": "assets/model/case118_ieee/base/seed0/normalizer_stats.pt",
+        "normalizer_stats_sha256": "01c93104fc47fbe4f7492d2926ad60fe7395f10f77f7788b2d71504ff6a68411",
+        "data_path": "assets/data",
+        "epochs": 100,
+        "checkpoint_selection": {
+          "monitor": "Validation layer_11_residual",
+          "mode": "min"
+        },
+        "losses": [
+          "LayeredWeightedPhysics",
+          "MaskedBusMSE"
+        ],
+        "loss_weights": [
+          0.1,
+          0.9
+        ],
+        "optimizer": {
+          "optimizer": "AdamW",
+          "learning_rate": 0.0005,
+          "beta1": 0.9,
+          "beta2": 0.999,
+          "lr_decay": 0.7,
+          "lr_patience": 5
+        },
+        "precision": "float32",
+        "tf32": false,
+        "compile": null,
+        "num_workers": 8,
+        "mp_context": "spawn",
+        "log_dir": "outputs/training-controls-small-reduced/resume-to-100/mlruns",
+        "run_name": "untied-seed0-to100",
+        "resume": {
+          "completed_epochs": 70,
+          "global_step": 19180,
+          "parent_manifest": "outputs/training-controls-small-reduced/resume-to-70/runs/untied/seed0/manifest.json",
+          "parent_manifest_sha256": "09099705273d2fbd7ff99aef9685eb0aa42fadb5c8da73fa87fe28f5c15cce6f",
+          "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-70/mlruns/830364206729761796/3bd0a70001d74fbeaa5498bdadb8f41e/checkpoints/last.ckpt",
+          "last_checkpoint_sha256": "c6aea161fd9c889fd34c010d1ec823f429a8fa292a17081c1e58465d7cb44585",
+          "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-70/mlruns/830364206729761796/3bd0a70001d74fbeaa5498bdadb8f41e/artifacts/model/best_model_state_dict.pt",
+          "best_checkpoint_sha256": "1a00883618d8e0dbcede5899517482270daeced01df0c3c731ac736b54ed8617",
+          "best_validation_score": 0.011652425862848759
+        }
+      },
+      "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/1bae92bbdac247b8bfd9959ad6e6ae14/checkpoints/last.ckpt",
+      "last_checkpoint_sha256": "3ae2f4cafb527f5adf5a50222115da655fa84ba69364dc14c25025b5451ac052",
+      "final_global_step": 27400,
+      "completed_at_utc": "2026-10-14T06:35:52.886424+00:00",
+      "runtime_seconds": 1445.2851303191856,
+      "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/1bae92bbdac247b8bfd9959ad6e6ae14/artifacts/model/best_model_state_dict.pt",
+      "best_checkpoint_sha256": "f92523022afede662c9aa59e3a286d7b0f271d12f4c88fe90a81300d7e359d43"
+    },
+    "traced_forward_matches_original": true,
+    "model_state_sha256_before": "59b8f94d8f559f7e25e15895ce39bb62f6b6b8ebab22598ea25c8090832458ff",
+    "model_state_sha256_after": "59b8f94d8f559f7e25e15895ce39bb62f6b6b8ebab22598ea25c8090832458ff",
+    "evaluation_seconds": 18.17538029095158,
+    "parameters": 5047011
+  },
+  {
+    "schema_version": 1,
+    "status": "complete",
+    "created_at_utc": "2026-10-14T16:10:27.114354+00:00",
+    "variant": {
+      "label": "tied_tail-seed0-to100",
+      "network": "case118_ieee",
+      "size": "Small",
+      "seed": 0,
+      "model_dir": "/Users/yyh/Desktop/inside-genco/assets/model/case118_ieee/small/seed0",
+      "raw_dir": "/Users/yyh/Desktop/inside-genco/assets/data/case118_ieee/raw",
+      "split": "/Users/yyh/Desktop/inside-genco/assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json",
+      "selection": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "data_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+      "model_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/cross-network-assets.lock.json",
+      "name": "tied_tail_seed0"
+    },
+    "selection": {
+      "path": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "sha256": "018559ffab4266e3bcf255ce4bf942fdc14183b288863de66c617f00d9de16e0",
+      "name": "all",
+      "research_split": "all",
+      "dependencies": {
+        "assets/manifests/case118-assets.lock.json": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+        "assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json": "227909485377cff58831dc4fcd3e586ba820f5af6619d979faff5af6f0e99c1a",
+        "assets/operating-conditions/case118/scenario_index.csv": "c13eaeeb9deb0cc57a1b6512017d98f7a03bcc1f59443e487c366a45106dc619",
+        "assets/operating-conditions/case118/group_splits.json": "ed65e2d87242bd2fe7d1f3ef8dfe5bf24902414e426f36eda8385f2d051ecbec"
+      },
+      "research_splits": [
+        "exploration",
+        "confirmation",
+        "reserve"
+      ]
+    },
+    "conditions": 115,
+    "config_sha256": "b6f0e603d394f0ac9e17528a487756c1975ee439820d71132387bb353de817fc",
+    "data_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+    "model_lock_sha256": "c8bb3515f4749671249017013a579eda74b4d3089730c1333903f739ce55e4e2",
+    "device": "cpu",
+    "forward_dtype": "float32",
+    "metric_dtype": "float64",
+    "threads": 4,
+    "cka_only": true,
+    "training_manifest": "outputs/training-controls-small-reduced/resume-to-100/runs/tied_tail/seed0/manifest.json",
+    "training_manifest_sha256": "9e10d481367ca840500616b33aec6205df58cfdf78d44ae56921036f70518b38",
+    "training_source": {
+      "schema_version": 1,
+      "status": "complete",
+      "created_at_utc": "2026-10-14T06:35:58.182906+00:00",
+      "platform": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+      "research_git_commit": "0c452f28b099ac6b4cde2c7190a99c47d48ba4fe",
+      "plan": {
+        "architecture": "tied_tail",
+        "seed": 0,
+        "config": "outputs/training-controls-small-reduced/resume-to-100/runs/tied_tail/seed0/config.yaml",
+        "config_sha256": "f2fcfe64707575a48db99c76fcb5e7aa184da726785baab4a5bc237a96a85013",
+        "fixed_split_manifest_sha256": "de77a14bf32c19fc94505fe6ccfafc526c32f0e143869d59411b9cba7fe0f5af",
+        "normalizer_stats": "assets/model/case118_ieee/base/seed0/normalizer_stats.pt",
+        "normalizer_stats_sha256": "01c93104fc47fbe4f7492d2926ad60fe7395f10f77f7788b2d71504ff6a68411",
+        "data_path": "assets/data",
+        "epochs": 100,
+        "checkpoint_selection": {
+          "monitor": "Validation layer_11_residual",
+          "mode": "min"
+        },
+        "losses": [
+          "LayeredWeightedPhysics",
+          "MaskedBusMSE"
+        ],
+        "loss_weights": [
+          0.1,
+          0.9
+        ],
+        "optimizer": {
+          "optimizer": "AdamW",
+          "learning_rate": 0.0005,
+          "beta1": 0.9,
+          "beta2": 0.999,
+          "lr_decay": 0.7,
+          "lr_patience": 5
+        },
+        "precision": "float32",
+        "tf32": false,
+        "compile": null,
+        "num_workers": 8,
+        "mp_context": "spawn",
+        "log_dir": "outputs/training-controls-small-reduced/resume-to-100/mlruns",
+        "run_name": "tied_tail-seed0-to100",
+        "resume": {
+          "completed_epochs": 70,
+          "global_step": 19180,
+          "parent_manifest": "outputs/training-controls-small-reduced/resume-to-70/runs/tied_tail/seed0/manifest.json",
+          "parent_manifest_sha256": "6855eec6bfbac600ca038c25d2caf40dd6fc430538d3b48ae645fb369fc9a939",
+          "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-70/mlruns/830364206729761796/fe775e38156540ffb84656c0ff210d5e/checkpoints/last.ckpt",
+          "last_checkpoint_sha256": "31916a59f1889f497eeaab83fb06e3967455174ac12be3face20fd40b8ad5b55",
+          "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-70/mlruns/830364206729761796/fe775e38156540ffb84656c0ff210d5e/artifacts/model/best_model_state_dict.pt",
+          "best_checkpoint_sha256": "bc2b8971a28616ce5a77a792f79863ed6e83ce6089e5f46c645a142cdaf02c48",
+          "best_validation_score": 0.018835701048374176
+        }
+      },
+      "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/d5cf4863bc1e4bdc8e8f76bfe122dd60/checkpoints/last.ckpt",
+      "last_checkpoint_sha256": "98658cc6ffa52126d835a1d3cfa5c37d5c8bebdae8ddbad935ab868bc54f5ad2",
+      "final_global_step": 27400,
+      "completed_at_utc": "2026-10-14T06:59:05.249434+00:00",
+      "runtime_seconds": 1387.0665565477684,
+      "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/d5cf4863bc1e4bdc8e8f76bfe122dd60/artifacts/model/best_model_state_dict.pt",
+      "best_checkpoint_sha256": "2dffde0667944e8132446f34853548717cdb379c2e5b373fe28d8bf6e91873b1"
+    },
+    "traced_forward_matches_original": true,
+    "model_state_sha256_before": "bd8eb21f6511b3d030914f8bb450775dfbda8ab395e71514f86cf6c30fbbf1eb",
+    "model_state_sha256_after": "bd8eb21f6511b3d030914f8bb450775dfbda8ab395e71514f86cf6c30fbbf1eb",
+    "evaluation_seconds": 15.908815584145486,
+    "parameters": 529251
+  },
+  {
+    "schema_version": 1,
+    "status": "complete",
+    "created_at_utc": "2026-10-14T16:10:45.727592+00:00",
+    "variant": {
+      "label": "shared_graph_step_norms-seed0-to100",
+      "network": "case118_ieee",
+      "size": "Small",
+      "seed": 0,
+      "model_dir": "/Users/yyh/Desktop/inside-genco/assets/model/case118_ieee/small/seed0",
+      "raw_dir": "/Users/yyh/Desktop/inside-genco/assets/data/case118_ieee/raw",
+      "split": "/Users/yyh/Desktop/inside-genco/assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json",
+      "selection": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "data_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+      "model_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/cross-network-assets.lock.json",
+      "name": "shared_graph_step_norms_seed0"
+    },
+    "selection": {
+      "path": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "sha256": "018559ffab4266e3bcf255ce4bf942fdc14183b288863de66c617f00d9de16e0",
+      "name": "all",
+      "research_split": "all",
+      "dependencies": {
+        "assets/manifests/case118-assets.lock.json": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+        "assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json": "227909485377cff58831dc4fcd3e586ba820f5af6619d979faff5af6f0e99c1a",
+        "assets/operating-conditions/case118/scenario_index.csv": "c13eaeeb9deb0cc57a1b6512017d98f7a03bcc1f59443e487c366a45106dc619",
+        "assets/operating-conditions/case118/group_splits.json": "ed65e2d87242bd2fe7d1f3ef8dfe5bf24902414e426f36eda8385f2d051ecbec"
+      },
+      "research_splits": [
+        "exploration",
+        "confirmation",
+        "reserve"
+      ]
+    },
+    "conditions": 115,
+    "config_sha256": "b6f0e603d394f0ac9e17528a487756c1975ee439820d71132387bb353de817fc",
+    "data_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+    "model_lock_sha256": "c8bb3515f4749671249017013a579eda74b4d3089730c1333903f739ce55e4e2",
+    "device": "cpu",
+    "forward_dtype": "float32",
+    "metric_dtype": "float64",
+    "threads": 4,
+    "cka_only": true,
+    "training_manifest": "outputs/training-controls-small-reduced/resume-to-100/runs/shared_graph_step_norms/seed0/manifest.json",
+    "training_manifest_sha256": "bdf38ddfa56359b9edfebf5ad363936690a4e72eff7895d996ef99d74b9cda6c",
+    "training_source": {
+      "schema_version": 1,
+      "status": "complete",
+      "created_at_utc": "2026-10-14T06:59:10.611710+00:00",
+      "platform": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+      "research_git_commit": "0c452f28b099ac6b4cde2c7190a99c47d48ba4fe",
+      "plan": {
+        "architecture": "shared_graph_step_norms",
+        "seed": 0,
+        "config": "outputs/training-controls-small-reduced/resume-to-100/runs/shared_graph_step_norms/seed0/config.yaml",
+        "config_sha256": "38206a0c87d0c0d89f685eef1deb3060b197daf91957ab3bb883ca29a3a5916a",
+        "fixed_split_manifest_sha256": "de77a14bf32c19fc94505fe6ccfafc526c32f0e143869d59411b9cba7fe0f5af",
+        "normalizer_stats": "assets/model/case118_ieee/base/seed0/normalizer_stats.pt",
+        "normalizer_stats_sha256": "01c93104fc47fbe4f7492d2926ad60fe7395f10f77f7788b2d71504ff6a68411",
+        "data_path": "assets/data",
+        "epochs": 100,
+        "checkpoint_selection": {
+          "monitor": "Validation layer_11_residual",
+          "mode": "min"
+        },
+        "losses": [
+          "LayeredWeightedPhysics",
+          "MaskedBusMSE"
+        ],
+        "loss_weights": [
+          0.1,
+          0.9
+        ],
+        "optimizer": {
+          "optimizer": "AdamW",
+          "learning_rate": 0.0005,
+          "beta1": 0.9,
+          "beta2": 0.999,
+          "lr_decay": 0.7,
+          "lr_patience": 5
+        },
+        "precision": "float32",
+        "tf32": false,
+        "compile": null,
+        "num_workers": 8,
+        "mp_context": "spawn",
+        "log_dir": "outputs/training-controls-small-reduced/resume-to-100/mlruns",
+        "run_name": "shared_graph_step_norms-seed0-to100",
+        "resume": {
+          "completed_epochs": 70,
+          "global_step": 19180,
+          "parent_manifest": "outputs/training-controls-small-reduced/resume-to-70/runs/shared_graph_step_norms/seed0/manifest.json",
+          "parent_manifest_sha256": "48edbc4dc4ea9cf8921add2378c76f4c6f1f462f7aab777303cd6c2b5d4188d3",
+          "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-70/mlruns/830364206729761796/fecbf27b4706439eacb2e0af4967d50b/checkpoints/last.ckpt",
+          "last_checkpoint_sha256": "ec2231d53bfcdc4e4c621557e49c4f18e45368c6eba3f97c1cd0b173e1c409bd",
+          "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-70/mlruns/830364206729761796/fecbf27b4706439eacb2e0af4967d50b/artifacts/model/best_model_state_dict.pt",
+          "best_checkpoint_sha256": "c89d8f651fe9e2370b8d68e8b5358c6c2b29433b4e02d31244681659c31afbb7",
+          "best_validation_score": 0.021895384415984154
+        }
+      },
+      "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/259e2bac6e8d4c91bc8a3d11982d03b7/checkpoints/last.ckpt",
+      "last_checkpoint_sha256": "91d1dfb95723ae4f9bcb552ae414691c32f1c802bbebefe710d764e4c922a0bb",
+      "final_global_step": 27400,
+      "completed_at_utc": "2026-10-14T07:22:12.492474+00:00",
+      "runtime_seconds": 1381.8807852901518,
+      "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/259e2bac6e8d4c91bc8a3d11982d03b7/artifacts/model/best_model_state_dict.pt",
+      "best_checkpoint_sha256": "839f156454bbb09301f1b7ac199692c9fe5dc1e1e4a232964325120381448fad"
+    },
+    "traced_forward_matches_original": true,
+    "model_state_sha256_before": "4db1997490c1cd63e6e3f8729bf9724ab4704c765e760fbdd09aab0aca4eb64b",
+    "model_state_sha256_after": "4db1997490c1cd63e6e3f8729bf9724ab4704c765e760fbdd09aab0aca4eb64b",
+    "evaluation_seconds": 16.742794208228588,
+    "parameters": 536931
+  },
+  {
+    "schema_version": 1,
+    "status": "complete",
+    "created_at_utc": "2026-10-14T16:11:05.400959+00:00",
+    "variant": {
+      "label": "untied-seed1-to100",
+      "network": "case118_ieee",
+      "size": "Small",
+      "seed": 1,
+      "model_dir": "/Users/yyh/Desktop/inside-genco/assets/model/case118_ieee/small/seed0",
+      "raw_dir": "/Users/yyh/Desktop/inside-genco/assets/data/case118_ieee/raw",
+      "split": "/Users/yyh/Desktop/inside-genco/assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json",
+      "selection": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "data_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+      "model_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/cross-network-assets.lock.json",
+      "name": "untied_seed1"
+    },
+    "selection": {
+      "path": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "sha256": "018559ffab4266e3bcf255ce4bf942fdc14183b288863de66c617f00d9de16e0",
+      "name": "all",
+      "research_split": "all",
+      "dependencies": {
+        "assets/manifests/case118-assets.lock.json": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+        "assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json": "227909485377cff58831dc4fcd3e586ba820f5af6619d979faff5af6f0e99c1a",
+        "assets/operating-conditions/case118/scenario_index.csv": "c13eaeeb9deb0cc57a1b6512017d98f7a03bcc1f59443e487c366a45106dc619",
+        "assets/operating-conditions/case118/group_splits.json": "ed65e2d87242bd2fe7d1f3ef8dfe5bf24902414e426f36eda8385f2d051ecbec"
+      },
+      "research_splits": [
+        "exploration",
+        "confirmation",
+        "reserve"
+      ]
+    },
+    "conditions": 115,
+    "config_sha256": "b6f0e603d394f0ac9e17528a487756c1975ee439820d71132387bb353de817fc",
+    "data_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+    "model_lock_sha256": "c8bb3515f4749671249017013a579eda74b4d3089730c1333903f739ce55e4e2",
+    "device": "cpu",
+    "forward_dtype": "float32",
+    "metric_dtype": "float64",
+    "threads": 4,
+    "cka_only": true,
+    "training_manifest": "outputs/training-controls-small-reduced/resume-to-100/runs/untied/seed1/manifest.json",
+    "training_manifest_sha256": "9f677270261465985047b13f9f1c46631dc40eb5fd20e6599b36797222af3f0e",
+    "training_source": {
+      "schema_version": 1,
+      "status": "complete",
+      "created_at_utc": "2026-10-14T13:52:01.280841+00:00",
+      "platform": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+      "research_git_commit": "0c452f28b099ac6b4cde2c7190a99c47d48ba4fe",
+      "plan": {
+        "architecture": "untied",
+        "seed": 1,
+        "config": "outputs/training-controls-small-reduced/resume-to-100/runs/untied/seed1/config.yaml",
+        "config_sha256": "e9965d61066094fc08b9c13b024966a71a465f7bc467a884196d017550f6dfa7",
+        "fixed_split_manifest_sha256": "de77a14bf32c19fc94505fe6ccfafc526c32f0e143869d59411b9cba7fe0f5af",
+        "normalizer_stats": "assets/model/case118_ieee/base/seed0/normalizer_stats.pt",
+        "normalizer_stats_sha256": "01c93104fc47fbe4f7492d2926ad60fe7395f10f77f7788b2d71504ff6a68411",
+        "data_path": "assets/data",
+        "epochs": 100,
+        "checkpoint_selection": {
+          "monitor": "Validation layer_11_residual",
+          "mode": "min"
+        },
+        "losses": [
+          "LayeredWeightedPhysics",
+          "MaskedBusMSE"
+        ],
+        "loss_weights": [
+          0.1,
+          0.9
+        ],
+        "optimizer": {
+          "optimizer": "AdamW",
+          "learning_rate": 0.0005,
+          "beta1": 0.9,
+          "beta2": 0.999,
+          "lr_decay": 0.7,
+          "lr_patience": 5
+        },
+        "precision": "float32",
+        "tf32": false,
+        "compile": null,
+        "num_workers": 8,
+        "mp_context": "spawn",
+        "log_dir": "outputs/training-controls-small-reduced/resume-to-100/mlruns",
+        "run_name": "untied-seed1-to100",
+        "resume": {
+          "completed_epochs": 93,
+          "global_step": 25482,
+          "parent_manifest": "outputs/training-controls-small-reduced/resume-to-100/runs/untied/seed1/manifest.attempt-1.json",
+          "parent_manifest_sha256": "154892e3730260dd4633ec114f85224d6bd67db82a344377e1407366f07478c5",
+          "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/c05c51ce8b1c4afb8e12127fed469924/checkpoints/last.ckpt",
+          "last_checkpoint_sha256": "4d08e23193ea70a3c2a6108692e498236e48ba00ee73d2be37591558c315db12",
+          "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/c05c51ce8b1c4afb8e12127fed469924/artifacts/model/best_model_state_dict.pt",
+          "best_checkpoint_sha256": "f131b94d91a1f076749681cbf90e0cfa264ca30571c2462cd47a459bb41b7648",
+          "best_validation_score": 0.008118728175759315
+        }
+      },
+      "retry_of": "outputs/training-controls-small-reduced/resume-to-100/runs/untied/seed1/manifest.attempt-1.json",
+      "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/af23d2431483498891c9e479b72a4ff4/checkpoints/last.ckpt",
+      "last_checkpoint_sha256": "4258d9eb664042e9e89f8ad4dc607ce9cf082cf9c3ccca07b7bbfbaa146ca662",
+      "final_global_step": 27400,
+      "completed_at_utc": "2026-10-14T13:57:36.937426+00:00",
+      "runtime_seconds": 335.65661471989006,
+      "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/af23d2431483498891c9e479b72a4ff4/artifacts/model/best_model_state_dict.pt",
+      "best_checkpoint_sha256": "abcec69d164f1476bc7c40336dd094938465e3aa1fb025656273bb6a09cb476e"
+    },
+    "analysis_code_sha256": {
+      "scripts/run_trajectory_analysis.py": "5af49e3531823015b558a7b3fc954ff58a1a8cf44ed938683287aa5da7fc3f60",
+      "scripts/baseline.py": "f7a7cabcfc08fd33411b7fe113062cb20e146066c91368439cc1047a0186ca4f",
+      "src/inside_genco/trace.py": "18ddd0e4b71fae90cdfe10a72eb79237ebe38f55ae70801cabb217f1c71b867f",
+      "src/inside_genco/similarity.py": "5ff6f01a293d1a45c6f0f2799ef6d8d070632c2b020abeaa818faacc59fcc214"
+    },
+    "traced_forward_matches_original": true,
+    "model_state_sha256_before": "fdaa1cadfb7b24f7e60b947e7f1173084305460828543d2e2d6fae5ac50563b8",
+    "model_state_sha256_after": "fdaa1cadfb7b24f7e60b947e7f1173084305460828543d2e2d6fae5ac50563b8",
+    "evaluation_seconds": 18.035724999848753,
+    "parameters": 5047011
+  },
+  {
+    "schema_version": 1,
+    "status": "complete",
+    "created_at_utc": "2026-10-14T16:11:26.456306+00:00",
+    "variant": {
+      "label": "tied_tail-seed1-to100",
+      "network": "case118_ieee",
+      "size": "Small",
+      "seed": 1,
+      "model_dir": "/Users/yyh/Desktop/inside-genco/assets/model/case118_ieee/small/seed0",
+      "raw_dir": "/Users/yyh/Desktop/inside-genco/assets/data/case118_ieee/raw",
+      "split": "/Users/yyh/Desktop/inside-genco/assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json",
+      "selection": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "data_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+      "model_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/cross-network-assets.lock.json",
+      "name": "tied_tail_seed1"
+    },
+    "selection": {
+      "path": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "sha256": "018559ffab4266e3bcf255ce4bf942fdc14183b288863de66c617f00d9de16e0",
+      "name": "all",
+      "research_split": "all",
+      "dependencies": {
+        "assets/manifests/case118-assets.lock.json": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+        "assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json": "227909485377cff58831dc4fcd3e586ba820f5af6619d979faff5af6f0e99c1a",
+        "assets/operating-conditions/case118/scenario_index.csv": "c13eaeeb9deb0cc57a1b6512017d98f7a03bcc1f59443e487c366a45106dc619",
+        "assets/operating-conditions/case118/group_splits.json": "ed65e2d87242bd2fe7d1f3ef8dfe5bf24902414e426f36eda8385f2d051ecbec"
+      },
+      "research_splits": [
+        "exploration",
+        "confirmation",
+        "reserve"
+      ]
+    },
+    "conditions": 115,
+    "config_sha256": "b6f0e603d394f0ac9e17528a487756c1975ee439820d71132387bb353de817fc",
+    "data_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+    "model_lock_sha256": "c8bb3515f4749671249017013a579eda74b4d3089730c1333903f739ce55e4e2",
+    "device": "cpu",
+    "forward_dtype": "float32",
+    "metric_dtype": "float64",
+    "threads": 4,
+    "cka_only": true,
+    "training_manifest": "outputs/training-controls-small-reduced/resume-to-100/runs/tied_tail/seed1/manifest.json",
+    "training_manifest_sha256": "03b02d54255c4a0628de4f5ba60b1f123afcf3fae959ccf47c401af59270462e",
+    "training_source": {
+      "schema_version": 1,
+      "status": "complete",
+      "created_at_utc": "2026-10-14T13:57:42.466503+00:00",
+      "platform": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+      "research_git_commit": "0c452f28b099ac6b4cde2c7190a99c47d48ba4fe",
+      "plan": {
+        "architecture": "tied_tail",
+        "seed": 1,
+        "config": "outputs/training-controls-small-reduced/resume-to-100/runs/tied_tail/seed1/config.yaml",
+        "config_sha256": "e085cdb9074c10de968bf97893292fe81892bc95538c5f718672d31c3402bed5",
+        "fixed_split_manifest_sha256": "de77a14bf32c19fc94505fe6ccfafc526c32f0e143869d59411b9cba7fe0f5af",
+        "normalizer_stats": "assets/model/case118_ieee/base/seed0/normalizer_stats.pt",
+        "normalizer_stats_sha256": "01c93104fc47fbe4f7492d2926ad60fe7395f10f77f7788b2d71504ff6a68411",
+        "data_path": "assets/data",
+        "epochs": 100,
+        "checkpoint_selection": {
+          "monitor": "Validation layer_11_residual",
+          "mode": "min"
+        },
+        "losses": [
+          "LayeredWeightedPhysics",
+          "MaskedBusMSE"
+        ],
+        "loss_weights": [
+          0.1,
+          0.9
+        ],
+        "optimizer": {
+          "optimizer": "AdamW",
+          "learning_rate": 0.0005,
+          "beta1": 0.9,
+          "beta2": 0.999,
+          "lr_decay": 0.7,
+          "lr_patience": 5
+        },
+        "precision": "float32",
+        "tf32": false,
+        "compile": null,
+        "num_workers": 8,
+        "mp_context": "spawn",
+        "log_dir": "outputs/training-controls-small-reduced/resume-to-100/mlruns",
+        "run_name": "tied_tail-seed1-to100",
+        "resume": {
+          "completed_epochs": 70,
+          "global_step": 19180,
+          "parent_manifest": "outputs/training-controls-small-reduced/resume-to-70/runs/tied_tail/seed1/manifest.json",
+          "parent_manifest_sha256": "dbae5cd7230712618f6ccf581bf503995c929f1064aaa8e9764a85bae626a964",
+          "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-70/mlruns/830364206729761796/c94c7f57737943fdb29e905a6fe109e5/checkpoints/last.ckpt",
+          "last_checkpoint_sha256": "6623f792434860e0d7aab0532030dd00cf74c41def13767467278627dc9eba58",
+          "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-70/mlruns/830364206729761796/c94c7f57737943fdb29e905a6fe109e5/artifacts/model/best_model_state_dict.pt",
+          "best_checkpoint_sha256": "04ca39dcf3fccd4e633287519aeeb60552cf70deaebecfc547acdc30bbb11770",
+          "best_validation_score": 0.00579107366502285
+        }
+      },
+      "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/c48e25d928154d16850b388fe066e0e4/checkpoints/last.ckpt",
+      "last_checkpoint_sha256": "c75f470c2b2fbda66359e23f35e414c217b8af0bb89104e0c21f6f0365621f83",
+      "final_global_step": 27400,
+      "completed_at_utc": "2026-10-14T14:19:59.082469+00:00",
+      "runtime_seconds": 1336.615996970795,
+      "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/c48e25d928154d16850b388fe066e0e4/artifacts/model/best_model_state_dict.pt",
+      "best_checkpoint_sha256": "6fad4b7c7bf10c7fbe22ca04ba3de134161da3b961009567281d292f514124a9"
+    },
+    "analysis_code_sha256": {
+      "scripts/run_trajectory_analysis.py": "5af49e3531823015b558a7b3fc954ff58a1a8cf44ed938683287aa5da7fc3f60",
+      "scripts/baseline.py": "f7a7cabcfc08fd33411b7fe113062cb20e146066c91368439cc1047a0186ca4f",
+      "src/inside_genco/trace.py": "18ddd0e4b71fae90cdfe10a72eb79237ebe38f55ae70801cabb217f1c71b867f",
+      "src/inside_genco/similarity.py": "5ff6f01a293d1a45c6f0f2799ef6d8d070632c2b020abeaa818faacc59fcc214"
+    },
+    "traced_forward_matches_original": true,
+    "model_state_sha256_before": "acc5e8ba4aaa9dff41f5f9e5a85ccab767e8da0a8f9b1c8587cd1d8bf8166978",
+    "model_state_sha256_after": "acc5e8ba4aaa9dff41f5f9e5a85ccab767e8da0a8f9b1c8587cd1d8bf8166978",
+    "evaluation_seconds": 17.842468917369843,
+    "parameters": 529251
+  },
+  {
+    "schema_version": 1,
+    "status": "complete",
+    "created_at_utc": "2026-10-14T16:11:47.241248+00:00",
+    "variant": {
+      "label": "shared_graph_step_norms-seed1-to100",
+      "network": "case118_ieee",
+      "size": "Small",
+      "seed": 1,
+      "model_dir": "/Users/yyh/Desktop/inside-genco/assets/model/case118_ieee/small/seed0",
+      "raw_dir": "/Users/yyh/Desktop/inside-genco/assets/data/case118_ieee/raw",
+      "split": "/Users/yyh/Desktop/inside-genco/assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json",
+      "selection": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "data_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+      "model_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/cross-network-assets.lock.json",
+      "name": "shared_graph_step_norms_seed1"
+    },
+    "selection": {
+      "path": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+      "sha256": "018559ffab4266e3bcf255ce4bf942fdc14183b288863de66c617f00d9de16e0",
+      "name": "all",
+      "research_split": "all",
+      "dependencies": {
+        "assets/manifests/case118-assets.lock.json": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+        "assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json": "227909485377cff58831dc4fcd3e586ba820f5af6619d979faff5af6f0e99c1a",
+        "assets/operating-conditions/case118/scenario_index.csv": "c13eaeeb9deb0cc57a1b6512017d98f7a03bcc1f59443e487c366a45106dc619",
+        "assets/operating-conditions/case118/group_splits.json": "ed65e2d87242bd2fe7d1f3ef8dfe5bf24902414e426f36eda8385f2d051ecbec"
+      },
+      "research_splits": [
+        "exploration",
+        "confirmation",
+        "reserve"
+      ]
+    },
+    "conditions": 115,
+    "config_sha256": "b6f0e603d394f0ac9e17528a487756c1975ee439820d71132387bb353de817fc",
+    "data_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+    "model_lock_sha256": "c8bb3515f4749671249017013a579eda74b4d3089730c1333903f739ce55e4e2",
+    "device": "cpu",
+    "forward_dtype": "float32",
+    "metric_dtype": "float64",
+    "threads": 4,
+    "cka_only": true,
+    "training_manifest": "outputs/training-controls-small-reduced/resume-to-100/runs/shared_graph_step_norms/seed1/manifest.json",
+    "training_manifest_sha256": "d3be8231abf8e23eb8d74327038f74f2989327a08e0b13d8896b97d253a2907d",
+    "training_source": {
+      "schema_version": 1,
+      "status": "complete",
+      "created_at_utc": "2026-10-14T14:20:04.812559+00:00",
+      "platform": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+      "research_git_commit": "0c452f28b099ac6b4cde2c7190a99c47d48ba4fe",
+      "plan": {
+        "architecture": "shared_graph_step_norms",
+        "seed": 1,
+        "config": "outputs/training-controls-small-reduced/resume-to-100/runs/shared_graph_step_norms/seed1/config.yaml",
+        "config_sha256": "50e77b67e4085216ad4b9c8e0cbafb1747d47b28c257e09ff8ceeb88a32cd2ef",
+        "fixed_split_manifest_sha256": "de77a14bf32c19fc94505fe6ccfafc526c32f0e143869d59411b9cba7fe0f5af",
+        "normalizer_stats": "assets/model/case118_ieee/base/seed0/normalizer_stats.pt",
+        "normalizer_stats_sha256": "01c93104fc47fbe4f7492d2926ad60fe7395f10f77f7788b2d71504ff6a68411",
+        "data_path": "assets/data",
+        "epochs": 100,
+        "checkpoint_selection": {
+          "monitor": "Validation layer_11_residual",
+          "mode": "min"
+        },
+        "losses": [
+          "LayeredWeightedPhysics",
+          "MaskedBusMSE"
+        ],
+        "loss_weights": [
+          0.1,
+          0.9
+        ],
+        "optimizer": {
+          "optimizer": "AdamW",
+          "learning_rate": 0.0005,
+          "beta1": 0.9,
+          "beta2": 0.999,
+          "lr_decay": 0.7,
+          "lr_patience": 5
+        },
+        "precision": "float32",
+        "tf32": false,
+        "compile": null,
+        "num_workers": 8,
+        "mp_context": "spawn",
+        "log_dir": "outputs/training-controls-small-reduced/resume-to-100/mlruns",
+        "run_name": "shared_graph_step_norms-seed1-to100",
+        "resume": {
+          "completed_epochs": 70,
+          "global_step": 19180,
+          "parent_manifest": "outputs/training-controls-small-reduced/resume-to-70/runs/shared_graph_step_norms/seed1/manifest.json",
+          "parent_manifest_sha256": "037cab16f7648f9b17fcc31804c6cf5ca7b7f24c5166a020a3911e386441420c",
+          "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-70/mlruns/830364206729761796/0c8cb9db18bb495daa452c8e5a7bdb67/checkpoints/last.ckpt",
+          "last_checkpoint_sha256": "3a262071015c8ff0264f237aef595bc8317f3dc5517a93ed586c8e29b8773d17",
+          "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-70/mlruns/830364206729761796/0c8cb9db18bb495daa452c8e5a7bdb67/artifacts/model/best_model_state_dict.pt",
+          "best_checkpoint_sha256": "fc87f1e6d67239e7eeea286c2a707fe476081b743620a8fce16625d115948ef3",
+          "best_validation_score": 0.005820843391120434
+        }
+      },
+      "last_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/db5206e500ed4f7da88ecb87cecd7468/checkpoints/last.ckpt",
+      "last_checkpoint_sha256": "3b21d10e6a1cae569b46c1a3a1b25cb1ac32ef203d02fd9419ddd4c2c3c0e2df",
+      "final_global_step": 27400,
+      "completed_at_utc": "2026-10-14T14:43:13.533753+00:00",
+      "runtime_seconds": 1388.7212255541235,
+      "best_checkpoint": "outputs/training-controls-small-reduced/resume-to-100/mlruns/701642252557270904/db5206e500ed4f7da88ecb87cecd7468/artifacts/model/best_model_state_dict.pt",
+      "best_checkpoint_sha256": "a43c4a7105fb48fd33b8371a2f77a98f565c1d564e629621c21f2a1854c41b87"
+    },
+    "analysis_code_sha256": {
+      "scripts/run_trajectory_analysis.py": "5af49e3531823015b558a7b3fc954ff58a1a8cf44ed938683287aa5da7fc3f60",
+      "scripts/baseline.py": "f7a7cabcfc08fd33411b7fe113062cb20e146066c91368439cc1047a0186ca4f",
+      "src/inside_genco/trace.py": "18ddd0e4b71fae90cdfe10a72eb79237ebe38f55ae70801cabb217f1c71b867f",
+      "src/inside_genco/similarity.py": "5ff6f01a293d1a45c6f0f2799ef6d8d070632c2b020abeaa818faacc59fcc214"
+    },
+    "traced_forward_matches_original": true,
+    "model_state_sha256_before": "c9834a3818d44f94f6f34fcc35018f53ab890812541ba7cc8a7e6f3e70f18c0e",
+    "model_state_sha256_after": "c9834a3818d44f94f6f34fcc35018f53ab890812541ba7cc8a7e6f3e70f18c0e",
+    "evaluation_seconds": 17.64515741588548,
+    "parameters": 536931
+  }
+]

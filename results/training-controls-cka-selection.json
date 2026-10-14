@@ -1,0 +1,21 @@
+{
+  "criterion": "minimum best validation layer_11_residual within 100 epochs",
+  "node_centered": false,
+  "selected": [
+    {
+      "architecture": "untied",
+      "seed": 1,
+      "validation_residual": 0.007392633706331253
+    },
+    {
+      "architecture": "tied_tail",
+      "seed": 1,
+      "validation_residual": 0.004456183407455683
+    },
+    {
+      "architecture": "shared_graph_step_norms",
+      "seed": 1,
+      "validation_residual": 0.004158857744187117
+    }
+  ]
+}

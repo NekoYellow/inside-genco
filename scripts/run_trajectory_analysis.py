@@ -252,16 +252,50 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--batch-size", type=int)
     parser.add_argument("--threads", type=int, default=4)
+    parser.add_argument("--training-manifest", type=Path, help="evaluate a completed local training control instead of the released checkpoint")
+    parser.add_argument("--cka-only", action="store_true", help="Figure 2 only: omit bypass interventions and association analysis")
     parser.add_argument("--overwrite", action="store_true", help="replace a complete artifact for the same variant")
     args = parser.parse_args()
     if args.threads < 1 or (args.batch_size is not None and args.batch_size < 1):
         parser.error("threads and batch size must be positive")
 
     variant = load_variant(args.config, args.variant)
+    training = None
+    model_kwargs = {}
+    if args.training_manifest:
+        training = json.loads(args.training_manifest.read_text())
+        if training.get("status") != "complete":
+            raise ValueError("training control must be complete")
+        for path, expected in (
+            (training["best_checkpoint"], training["best_checkpoint_sha256"]),
+            (training["plan"]["config"], training["plan"]["config_sha256"]),
+            (training["plan"]["normalizer_stats"], training["plan"]["normalizer_stats_sha256"]),
+        ):
+            if sha256(ROOT / path) != expected:
+                raise ValueError(f"training input hash differs: {path}")
+        model_kwargs = dict(config_path=ROOT / training["plan"]["config"],
+                            checkpoint_path=ROOT / training["best_checkpoint"],
+                            normalizer_path=ROOT / training["plan"]["normalizer_stats"])
+        variant.update(name=f"{training['plan']['architecture']}_seed{training['plan']['seed']}",
+                       label=training["plan"]["run_name"], seed=training["plan"]["seed"])
+        if args.output is None:
+            parser.error("--training-manifest requires an explicit --output")
     data_lock = json.loads(variant["data_lock"].read_text())
     model_lock = json.loads(variant["model_lock"].read_text())
     official_test = load_splits(variant["split"])["test"]
     ids, metadata, selection_info = load_selection(variant["selection"], official_test, ROOT)
+    if training is not None:
+        protocol = yaml.safe_load((ROOT / "configs/training-controls.yaml").read_text())
+        prepared_path = ROOT / protocol["output_root"] / "prepared-manifest.json"
+        if sha256(prepared_path) != training["plan"]["fixed_split_manifest_sha256"]:
+            raise ValueError("training split provenance differs")
+        prepared = json.loads(prepared_path.read_text())
+        test = prepared["split_files"]["test"]
+        if sha256(ROOT / test["path"]) != test["sha256"]:
+            raise ValueError("training test split hash differs")
+        test_ids = torch.load(ROOT / test["path"], weights_only=True)
+        if not set(ids) <= set(int(i) for i in test_ids):
+            raise ValueError("Figure 2 selection is not held out from training")
 
     data_prefix = str(variant["raw_dir"].relative_to(ROOT)) + "/"
     data_entries = [
@@ -277,7 +311,9 @@ def main() -> None:
         if item["repo_type"] == "model" and item["local"].startswith(model_prefix)
     ]
     expected_model_files = {"best_model_state_dict.pt", "normalizer_stats.pt"}
-    if not expected_model_files <= {Path(item["local"]).name for item in required_model}:
+    if training is not None:
+        required_model = []
+    elif not expected_model_files <= {Path(item["local"]).name for item in required_model}:
         raise ValueError("model lock does not cover the selected checkpoint")
     for entry in required_data + required_model:
         if not verify(ROOT / entry["local"], entry):
@@ -289,7 +325,7 @@ def main() -> None:
         if not args.overwrite or not old_manifest.is_file():
             raise FileExistsError(f"output exists: {output}; use --overwrite only for a complete matching run")
         old = json.loads(old_manifest.read_text())
-        if old.get("status") != "complete" or old.get("variant", {}).get("name") != args.variant:
+        if old.get("status") != "complete" or old.get("variant", {}).get("name") != variant["name"]:
             raise ValueError("refusing to overwrite an incomplete or mismatched robustness artifact")
     else:
         output.mkdir(parents=True)
@@ -308,6 +344,15 @@ def main() -> None:
         "forward_dtype": "float32",
         "metric_dtype": "float64",
         "threads": args.threads,
+        "cka_only": args.cka_only,
+        "training_manifest": str(args.training_manifest) if training else None,
+        "training_manifest_sha256": sha256(args.training_manifest) if training else None,
+        "training_source": training,
+        "analysis_code_sha256": {
+            str(path.relative_to(ROOT)): sha256(path)
+            for path in (Path(__file__), ROOT / "scripts/baseline.py",
+                         ROOT / "src/inside_genco/trace.py", ROOT / "src/inside_genco/similarity.py")
+        },
     }
 
     def save_manifest() -> None:
@@ -321,7 +366,7 @@ def main() -> None:
         torch.set_num_threads(args.threads)
         torch.set_float32_matmul_precision("highest")
         config, normalizer, stats, task = load_model(
-            "cpu", variant["model_dir"], variant["network"]
+            "cpu", variant["model_dir"], variant["network"], **model_kwargs
         )
         layer_count = len(task.model.layers)
         if layer_count != 12:
@@ -356,6 +401,11 @@ def main() -> None:
                 raw_dir=variant["raw_dir"],
             ):
                 trace = adapter(batch.x_dict, batch.edge_index_dict, batch.edge_attr_dict, batch.mask_dict)
+                if completed == 0 and training is not None:
+                    original = task.model(batch.x_dict, batch.edge_index_dict, batch.edge_attr_dict, batch.mask_dict)
+                    for node in ("bus", "gen"):
+                        torch.testing.assert_close(trace.output[node], original[node], rtol=1e-5, atol=1e-6)
+                    manifest["traced_forward_matches_original"] = True
                 baseline_rows, _ = scenario_metrics(
                     trace.output, batch, normalizer, groups, topologies, "float64"
                 )
@@ -420,7 +470,7 @@ def main() -> None:
                             )
                         )
                     previous_physical_output = physical_output
-                for step_index in candidate_indices:
+                for step_index in ([] if args.cka_only else candidate_indices):
                     changed = adapter(
                         batch.x_dict,
                         batch.edge_index_dict,
@@ -445,7 +495,7 @@ def main() -> None:
                             }
                         )
                 completed += len(batch.scenario_id)
-                print(f"{args.variant}: {completed}/{len(ids)} conditions", flush=True)
+                print(f"{variant['name']}: {completed}/{len(ids)} conditions", flush=True)
 
         if sorted({row["scenario_id"] for row in physical_rows}) != ids:
             raise ValueError("evaluated conditions differ from selection")
@@ -496,6 +546,17 @@ def main() -> None:
                         **asdict(result),
                     }
                 )
+
+        if args.cka_only:
+            write_csv(output / "cka.csv", cka_rows)
+            write_csv(output / "physical_trajectory.csv", physical_rows)
+            manifest.update(status="complete", model_state_sha256_before=state_before,
+                            model_state_sha256_after=state_after,
+                            evaluation_seconds=time.perf_counter() - started,
+                            parameters=sum(p.numel() for p in task.parameters()))
+            save_manifest()
+            print(f"Completed Figure 2 CKA: {output}", flush=True)
+            return
 
         physical = pd.DataFrame(physical_rows)
         physical_updates = pd.DataFrame(physical_update_rows)

@@ -224,16 +224,19 @@ def scenario_metrics(output, batch, normalizer, groups, topologies, metric_dtype
     return rows, discrepancy.item()
 
 
-def load_model(device='cpu', model_dir=None, network=None):
+def load_model(device='cpu', model_dir=None, network=None, *, config_path=None,
+               checkpoint_path=None, normalizer_path=None):
     import torch
     import yaml
     from gridfm_graphkit.io.param_handler import NestedNamespace, load_normalizer, get_task
     from gridfm_graphkit.training.callbacks import adapt_state_dict_for_model
     model_dir = Path(model_dir) if model_dir is not None else ROOT / 'assets/model/case118_ieee/base/seed0'
-    configs = sorted(model_dir.glob('*.yaml'))
+    configs = [Path(config_path)] if config_path is not None else sorted(model_dir.glob('*.yaml'))
     if len(configs) != 1:
         raise ValueError(f'expected one model config in {model_dir}, found {len(configs)}')
     cfg = yaml.safe_load(configs[0].read_text())
+    if cfg['model']['type'] in ('GNS_heterogeneous_tied_tail', 'GNS_heterogeneous_shared_graph_step_norms'):
+        from inside_genco import tied_tail_plugin  # Register trained sharing architectures.
     configured_networks = list(cfg['data']['networks'])
     if len(configured_networks) != 1:
         raise ValueError('robustness analysis expects a single-network checkpoint')
@@ -243,12 +246,12 @@ def load_model(device='cpu', model_dir=None, network=None):
     cfg['verbose'] = False
     config = NestedNamespace(**cfg)
     normalizer = load_normalizer(config)
-    stats = torch.load(model_dir / 'normalizer_stats.pt', map_location='cpu', weights_only=True)
+    stats = torch.load(normalizer_path or model_dir / 'normalizer_stats.pt', map_location='cpu', weights_only=True)
     if set(stats) != {configured_network}:
         raise ValueError('Normalizer statistics do not match the selected network')
     normalizer.fit_from_dict(stats[configured_network])
     task = get_task(config, [normalizer])
-    state = torch.load(model_dir / 'best_model_state_dict.pt', map_location='cpu', weights_only=True)
+    state = torch.load(checkpoint_path or model_dir / 'best_model_state_dict.pt', map_location='cpu', weights_only=True)
     task.load_state_dict(adapt_state_dict_for_model(state, task), strict=True)
     task.to(device).eval().requires_grad_(False)
     return config, normalizer, stats, task

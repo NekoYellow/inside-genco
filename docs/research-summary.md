@@ -81,11 +81,25 @@ This result supports functional specialization within the released untied checkp
 
 The released case118 Base model has **20,069,187** unique parameters. If correction 1 remains independent while corrections 2–12 share correction 2's graph operator and both LayerNorms, the same 12-call computation graph has **2,094,147** unique parameters, a **9.58×** reduction. Sharing the graph operator while retaining step-specific LayerNorms gives **2,109,507** parameters.
 
-To establish an accuracy–parameter tradeoff, we need to train these alternative architectures from scratch: the original untied model, a strict recurrent-tail model, and a shared-graph model with step-specific LayerNorms. We began exploring this comparison but did not complete it because of the computational cost: training all three architectures with three seeds each was estimated to require several days of RTX 6000D GPU time.
+With limited computational resources, we ran a small-scale training experiment on case118 Small: the original untied model, a recurrent tail sharing both graph operators and LayerNorms, and a shared-graph model retaining step-specific LayerNorms. All three used the same fixed 10% subsets of training and validation load groups, normalizer, losses, and 100-epoch budget, with two seeds each. Evaluation used the full test split and checkpoints selected by validation residual.
+
+| Architecture | Unique parameters | Test PBE Mean, averaged over two seeds (MVA) |
+| --- | ---: | ---: |
+| Untied | 5,047,011 | 1.177 |
+| Tied tail | 529,251 | 1.004 |
+| Shared graph + step-specific norms | 536,931 | 1.057 |
+
+The three architectures achieved comparable test performance, with the shared variants using roughly one tenth of the parameters. Their representation trajectories were also similar: early corrections changed the geometry substantially, while later corrections entered a high-similarity regime.
+
+![Raw CKA across trained architectures](../figures/training-controls/cka_raw_best_seeds.png)
+
+*Figure 7 — Raw cross-correction CKA on the same 115 operating conditions. Each architecture uses its better seed by validation residual, which is all seed 1; rows show buses and generators.*
+
+This connects naturally to recent work on looped Transformers in language modeling. [Reasoning with Latent Thoughts](https://arxiv.org/abs/2502.17416) shows that repeated shared layers can compete with deeper untied models on reasoning tasks, while [Loop, Think, & Generalize](https://arxiv.org/abs/2604.07822) explores deeper reasoning through additional inference-time recurrence. Our small-scale results make recurrent parameter sharing a promising direction for GENCO: preserving iterative refinement with fewer parameters, and exploring whether the number of correction steps can become an adjustable computation budget.
 
 ## Conclusion
 
-The evidence suggests that GENCO's 12 corrections are not interchangeable iterations of a stationary operator, but a learned sequence of specialized refinement stages. Bus latent geometry stabilizes before physical feasibility converges, and this stable geometry still coexists with widespread small node updates. Late corrections can remain functionally important despite small representational change, and replacing a correction block with one learned at another depth consistently damages the final solution. An experiment to train GENCO of alternative architectures from scratch could answer whether this specialization also yields a better accuracy–parameter tradeoff than recurrent sharing.
+GENCO’s correction blocks have learned stage-specific roles. Functional specialization exists in the untied model, but step-specific parameters may not be required to achieve comparable refinement performance. Our small-scale training experiment supports this distinction: recurrent-sharing variants achieve comparable performance and exhibit similar representation trajectories with roughly one tenth of the parameters. Together with recent progress in looped Transformers, these findings motivate exploring GENCO as a parameter-efficient recurrent physics solver.
 
 ## Metric glossary
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import argparse
 import os
 from pathlib import Path
 
@@ -67,7 +68,79 @@ def save_figure(fig: plt.Figure, category: str, stem: str) -> list[str]:
     return [str(path.relative_to(ROOT))]
 
 
+def summarize_training_cka(directory: Path) -> None:
+    """Compare Figure 2 views without overwriting the released-model figures."""
+    architectures = ("untied", "tied_tail", "shared_graph_step_norms")
+    labels = ("Untied", "Tied tail", "Shared graph + step norms")
+    all_rows, summaries, provenance = [], [], []
+    candidates = {architecture: [] for architecture in architectures}
+    selection = None
+    for seed in (0, 1):
+        for row, (architecture, label) in enumerate(zip(architectures, labels)):
+            run = directory / f"{architecture}_seed{seed}"
+            manifest = json.loads((run / "manifest.json").read_text())
+            if manifest["status"] != "complete" or not manifest["traced_forward_matches_original"]:
+                raise ValueError(f"incomplete or unverified trace: {run}")
+            identity = (manifest["selection"], manifest["conditions"], manifest["training_source"]["plan"]["fixed_split_manifest_sha256"])
+            if selection is not None and identity != selection:
+                raise ValueError("models were evaluated on different selections")
+            selection = identity
+            provenance.append(manifest)
+            source = manifest["training_source"]
+            metric_path = ROOT / Path(source["best_checkpoint"]).parents[2] / "metrics/Validation layer_11_residual"
+            score = min(
+                min(float(line.split()[1]) for line in metric_path.read_text().splitlines()),
+                source["plan"].get("resume", {}).get("best_validation_score", float("inf")),
+            )
+            if not np.isfinite(score):
+                raise ValueError(f"invalid validation score: {run}")
+            candidates[architecture].append((score, seed))
+            frame = pd.read_csv(run / "cka.csv")
+            frame = frame[frame.kind == "cross_step_h_graph"].copy()
+            frame["architecture"], frame["seed"] = architecture, seed
+            all_rows.append(frame)
+            for col, (node, centered) in enumerate((("bus", False), ("bus", True), ("gen", False), ("gen", True))):
+                selected = frame[(frame.node_type == node) & (frame.node_centered == centered)]
+                matrix = selected.pivot(index="left_step", columns="right_step", values="value").sort_index().sort_index(axis=1)
+                if matrix.shape != (12, 12) or not selected.valid.all() or not np.isfinite(matrix.to_numpy()).all():
+                    raise ValueError(f"invalid CKA matrix: {run}/{node}/{centered}")
+                late = selected[(selected.left_step >= 7) & (selected.right_step >= 7) & (selected.left_step != selected.right_step)]
+                summaries.append(dict(architecture=architecture, seed=seed, node_type=node,
+                                      node_centered=centered, late_mean_cka=late.value.mean()))
+    combined = pd.concat(all_rows, ignore_index=True)
+    chosen = []
+    fig, axes = plt.subplots(2, 3, figsize=(11, 7), constrained_layout=True)
+    for col, (architecture, label) in enumerate(zip(architectures, labels)):
+        score, seed = min(candidates[architecture])
+        chosen.append(dict(architecture=architecture, seed=seed, validation_residual=score))
+        for row, node in enumerate(("bus", "gen")):
+            selected = combined[(combined.architecture == architecture) & (combined.seed == seed)
+                                & (combined.node_type == node) & ~combined.node_centered]
+            matrix = selected.pivot(index="left_step", columns="right_step", values="value").sort_index().sort_index(axis=1)
+            ax = axes[row, col]
+            heatmap = ax.imshow(matrix.to_numpy(), vmin=0, vmax=1, cmap="viridis")
+            ax.set(title=label if row == 0 else "", xlabel="Correction step" if row == 1 else "",
+                   ylabel=("Bus" if row == 0 else "Generator") if col == 0 else "",
+                   xticks=[0, 3, 6, 9, 11], xticklabels=[1, 4, 7, 10, 12],
+                   yticks=[0, 3, 6, 9, 11], yticklabels=[1, 4, 7, 10, 12])
+    fig.colorbar(heatmap, ax=axes, shrink=.85, label="CKA", pad=.02)
+    save_figure(fig, "training-controls", "cka_raw_best_seeds")
+    (ROOT / "results/training-controls-cka-selection.json").write_text(json.dumps(
+        {"criterion": "minimum best validation layer_11_residual within 100 epochs",
+         "node_centered": False, "selected": chosen}, indent=2) + "\n")
+    pd.concat(all_rows, ignore_index=True).to_csv(ROOT / "results/training-controls-cka.csv", index=False)
+    pd.DataFrame(summaries).to_csv(ROOT / "results/training-controls-cka-summary.csv", index=False)
+    (ROOT / "results/training-controls-cka-provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
+    print(pd.DataFrame(summaries).to_string(index=False))
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--training-cka", type=Path, help="render matched trained-control Figure 2 comparisons only")
+    args = parser.parse_args()
+    if args.training_cka:
+        summarize_training_cka(args.training_cka)
+        return
     config = yaml.safe_load((ROOT / "configs/checkpoints.yaml").read_text())["variants"]
     records = []
     tables = {}
