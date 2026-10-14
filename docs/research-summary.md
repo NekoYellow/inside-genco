@@ -56,6 +56,8 @@ Node activity clarifies what this stabilization does—and does not—mean. For 
 
 At the 1% threshold, **100%** of bus nodes remain active at correction 11 and **99.55%** at correction 12. At the 5% threshold, both fractions are **0%**. Meanwhile, every generator node exceeds a 20% graph update throughout corrections 7–12. Thus, high late bus CKA coexists with widespread small node updates, while generators retain substantially larger relative updates. The apparent disappearance of bus activity at a higher threshold reflects diminishing update magnitude instead a set of completely inactive nodes.
 
+The physical trajectories show continued generator-output adjustment alongside finer bus-state corrections: from correction 10 to 11, the median per-condition mean absolute generator active-power movement increases from **0.0383 to 0.0728 MW**, while angle movement falls from **0.00264 to 0.00110 rad** and voltage-magnitude movement from **$5.96\times10^{-5}$ to $3.01\times10^{-5}$ p.u.**; each movement is measured relative to the preceding correction.
+
 ![Cross-checkpoint trajectory](../figures/trajectories/cross_checkpoint_trajectory_and_cka.png)
 
 *Figure 4 — Median physical trajectory and late node-centered CKA for released checkpoints.*
@@ -71,6 +73,15 @@ Corrections 2–11 are bypassed one at a time as complete computational units: g
 *Figure 5 — CKA geometry change along the normal trajectory versus mean positive final residual damage from a whole-correction bypass.*
 
 Across the full corrections 2–11 trajectory, CKA change and bypass damage are strongly associated in all checkpoints. In the primary checkpoint, their step-level Spearman correlation is **0.855**. Restricted to late corrections 7–11, however, it falls to **0.10**: correction 11 has the smallest CKA change, whereas correction 8 has the smallest bypass damage.
+
+| Released checkpoint | Corrections 2–11: Spearman $\rho$ [95% CI] | Corrections 7–11: Spearman $\rho$ [95% CI] |
+| --- | ---: | ---: |
+| case118 Base, seed 0 | 0.855 [0.855, 0.867] | 0.100 [0.100, 0.200] |
+| case118 Base, seed 1 | 0.927 [0.927, 0.939] | 0.900 [0.900, 1.000] |
+| case118 Small, seed 0 | 0.952 [0.903, 0.952] | 1.000 [1.000, 1.000] |
+| case30 Base, seed 0 | 0.988 [0.976, 0.988] | 0.900 [0.900, 0.900] |
+
+Intervals use 2,000 operating-condition bootstrap resamples, recomputing mean bypass damage and its step-level rank correlation while holding CKA fixed. They describe condition-sampling variability for these checkpoints.
 
 These descriptive correlations suggest an association between CKA change and bypass damage over the full trajectory. The late-stage result covers only five corrections and does not establish CKA's reliability as a local importance criterion. Bypass damage measures sensitivity within the trained chain and may also reflect downstream distribution shift.
 
@@ -92,11 +103,11 @@ The released case118 Base model has **20,069,187** unique parameters. If correct
 
 With limited computational resources, we ran a small-scale training experiment on case118 Small: the original untied model, a recurrent tail sharing both graph operators and LayerNorms, and a shared-graph model retaining step-specific LayerNorms. All three used the same fixed 10% subsets of training and validation load groups, normalizer, losses, and 100-epoch budget, with two seeds each. Evaluation used the full test split and checkpoints selected by validation residual.
 
-| Architecture | Unique parameters | Test PBE Mean, averaged over two seeds (MVA) |
-| --- | ---: | ---: |
-| Untied | 5,047,011 | 1.177 |
-| Tied tail | 529,251 | 1.004 |
-| Shared graph + step-specific norms | 536,931 | 1.057 |
+| Architecture | Unique parameters | Test PBE Mean: seed 0 (MVA) | Seed 1 (MVA) | Two-seed mean (MVA) |
+| --- | ---: | ---: | ---: | ---: |
+| Untied | 5,047,011 | 1.394 | 0.960 | 1.177 |
+| Tied tail | 529,251 | 1.405 | 0.603 | 1.004 |
+| Shared graph + step-specific norms | 536,931 | 1.557 | 0.557 | 1.057 |
 
 The three architectures achieved comparable test performance in this limited training setting, with the shared variants using roughly one tenth of the parameters. Their representation trajectories were also similar: early corrections changed the geometry substantially, while later corrections entered a high-similarity regime.
 
