@@ -4,7 +4,7 @@ This project looks inside [GENCO](https://arxiv.org/abs/2608.09921), a grid foun
 
 ## Findings
 
-### How a solution evloves throughout GENCO
+### How a solution evoloves throughout GENCO
 
 The model's internal patterns become similar across later steps, but its answer keeps getting closer to satisfying the grid's physical constraints.
 
@@ -16,11 +16,11 @@ Even when the overall internal pattern looks stable, many nodes can still receiv
 
 ![Node activity across thresholds](figures/node-activity/node_activity_fraction.png)
 
-Besides, we skip individual steps and check how the final answer changes. A step that barely changes the model's internal pattern can still help the solution.
+We also skip individual steps and check how the final answer changes. A step that barely changes the model's internal pattern can still help the solution.
 
 ![Representation change versus whole-correction bypass damage](figures/interventions/representation_change_vs_importance.png)
 
-### Different steps represent different roles
+### Different steps perform unique functions
 
 We replace a step's learned processing block with one from another step. These swaps make the final answers worse on average in the model tested, supporting the idea that different steps have learned different roles.
 
@@ -28,7 +28,7 @@ Swapping graph processing and normalization separately shows that both matter. I
 
 ![Operator substitution](figures/operators/operator_substitution_matrix.png)
 
-The released model has learned different roles for its steps. But could a shared block learn to refine the changing state just as well? With limited compute, we trained small models with separate or shared blocks. They achieved similar performance and showed similar patterns of internal refinement, while the shared models used far fewer parameters.
+The released model has learned different roles for its steps. But could a shared block learn to refine the changing state just as well? With limited compute, we trained small models with separate or shared blocks. They achieved [similar performance with far fewer parameters](docs/research-summary.md#parameter-sharing-implication) and showed similar patterns of internal refinement.
 
 ![Representation similarity across separately trained architectures](figures/training-controls/cka_raw_best_seeds.png)
 

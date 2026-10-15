@@ -1,6 +1,10 @@
-# Reproduce the frozen-checkpoint analysis
+# Reproduce the experiments
 
-Follow the environment and download commands in [README.md](../README.md). Asset manifests pin upstream revisions, file sizes, and hashes. All experiments use inference on released checkpoints.
+## Setup
+
+Follow the environment and download commands in [README.md](../README.md#reproduce).
+
+## Frozen-checkpoint analysis
 
 ```bash
 for variant in case118_base_seed0 case118_base_seed1 case118_small_seed0 case30_base_seed0
@@ -17,4 +21,16 @@ done
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-Each trajectory run writes physical quality and adjacent decoded-variable changes, cross-step/within-step CKA, per-node relative updates (`node_updates.csv`), whole-correction bypass effects, and condition-bootstrap association statistics under `outputs/trajectory-analysis/<variant>/`. Its manifest records checkpoint/input hashes, runtime, completion status, and checkpoint-state immutability checks. Summarization generates compact tables under `results/` and the trajectory, CKA, node-activity, and bypass figures under `figures/`. To regenerate an existing completed run with the restored activity analysis, append `--overwrite` to the trajectory command.
+## Training controls: 50 → 100 epochs
+
+```bash
+.venv/bin/python scripts/prepare_training_controls.py
+for architecture in untied tied_tail shared_graph_step_norms
+do
+  for seed in 0 1
+  do
+    .venv/bin/python scripts/run_training_control.py --architecture "$architecture" --seed "$seed"
+    .venv/bin/python scripts/run_training_control.py --architecture "$architecture" --seed "$seed" --resume-to-epoch 100
+  done
+done
+```

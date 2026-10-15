@@ -54,7 +54,7 @@ The bus representation enters a high-similarity regime over corrections 7–12. 
 
 Node activity clarifies what this stabilization does—and does not—mean. For each node, we measure the relative update magnitude `||h_graph − h_in||₂ / (||h_in||₂ + 1e−12)` at corrections 2–12, consistently before physics feedback. Correction 1 is excluded because it changes feature width. Unlike cross-correction CKA, this measure asks how much each graph block moves its input, not how similar the geometry of successive graph outputs is.
 
-At the 1% threshold, **100%** of bus nodes remain active at correction 11 and **99.55%** at correction 12. At the 5% threshold, both fractions are **0%**. Meanwhile, every generator node exceeds a 20% graph update throughout corrections 7–12. Thus, high late bus CKA coexists with widespread small node updates, while generators retain substantially larger relative updates. The apparent disappearance of bus activity at a higher threshold reflects diminishing update magnitude instead a set of completely inactive nodes.
+At the 1% threshold, **100%** of bus nodes remain active at correction 11 and **99.55%** at correction 12. At the 5% threshold, both fractions are **0%**. Meanwhile, every generator node exceeds a 20% graph update throughout corrections 7–12. Thus, high late bus CKA coexists with widespread small node updates, while generators retain substantially larger relative updates. The apparent disappearance of bus activity at a higher threshold reflects diminishing update magnitude rather than a set of completely inactive nodes.
 
 The physical trajectories show continued generator-output adjustment alongside finer bus-state corrections: from correction 10 to 11, the median per-condition mean absolute generator active-power movement increases from **0.0383 to 0.0728 MW**, while angle movement falls from **0.00264 to 0.00110 rad** and voltage-magnitude movement from **$5.96\times10^{-5}$ to $3.01\times10^{-5}$ p.u.**; each movement is measured relative to the preceding correction.
 
@@ -131,7 +131,7 @@ GENCO’s correction blocks have learned stage-specific roles. Functional specia
 
 ## Metric glossary
 
-Below lists a few metrics used in this research, as well as some related GENCO concepts.
+Below defines a few metrics used in this research, as well as some related GENCO concepts.
 
 | Metric / term | Definition |
 | --- | --- |
