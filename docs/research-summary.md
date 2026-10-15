@@ -131,10 +131,11 @@ GENCO’s correction blocks have learned stage-specific roles. Functional specia
 
 ## Metric glossary
 
-Below lists a few metrics used in this research, as well as some related GENCO concepts. In the formulas below, $r_i^P$ and $r_i^Q$ are bus power-balance mismatches.
+Below lists a few metrics used in this research, as well as some related GENCO concepts.
 
 | Metric / term | Definition |
 | --- | --- |
+| Bus power-balance mismatches, $r_i^P$ and $r_i^Q$ | Active and reactive power-balance mismatches at bus $i$, respectively. |
 | Maximum power-balance residual, $R_\infty$ | Largest absolute active mismatch over non-REF buses or reactive mismatch over PQ buses, divided by the 100 MVA base: $R_\infty=\max(\max_{i\notin\mathrm{REF}}\lvert r_i^P\rvert,\max_{i\in\mathrm{PQ}}\lvert r_i^Q\rvert)/100$. |
 | Active / reactive mismatch | Mean absolute power-balance mismatch over all buses, in MW / Mvar. |
 | Combined imbalance (PBE) | Mean or maximum of $\sqrt{(r_i^P)^2+(r_i^Q)^2}$ over all buses, in MVA. |
