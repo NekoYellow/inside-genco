@@ -73,6 +73,21 @@ class InterventionTests(unittest.TestCase):
         self.assertIs(bus_norm, model.norms_bus[3])
         self.assertIs(gen_norm, model.norms_gen[3])
 
+        for component, graph_index, norm_index in (("graph", 3, 1), ("norm", 1, 3)):
+            plan = InterventionPlan(operator_sources={1: 3}, operator_component=component)
+            plan.validate(4)
+            graph, bus_norm, gen_norm, _ = _operator_modules(model, 1, plan)
+            self.assertIs(graph, model.layers[graph_index])
+            self.assertIs(bus_norm, model.norms_bus[norm_index])
+            self.assertIs(gen_norm, model.norms_gen[norm_index])
+            diagonal = InterventionPlan(operator_sources={1: 1}, operator_component=component)
+            graph, bus_norm, gen_norm, _ = _operator_modules(model, 1, diagonal)
+            self.assertIs(graph, model.layers[1])
+            self.assertIs(bus_norm, model.norms_bus[1])
+            self.assertIs(gen_norm, model.norms_gen[1])
+        with self.assertRaisesRegex(ValueError, "operator component"):
+            InterventionPlan(operator_component="unknown").validate(4)
+
 class RecurrentTailTests(unittest.TestCase):
     @staticmethod
     def model() -> torch.nn.Module:

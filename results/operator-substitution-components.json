@@ -1,0 +1,393 @@
+{
+  "variant": "case118_base_seed0",
+  "conditions": 115,
+  "components": [
+    {
+      "component": "joint",
+      "off_diagonal_cells": 110,
+      "positive_cells": 110,
+      "diagonal_best_targets": 11,
+      "min": 0.0105131373,
+      "median": 0.3710310845,
+      "mean": 4.756351726097092,
+      "max": 34.5417662,
+      "late_median": 0.05273938834
+    },
+    {
+      "component": "graph",
+      "off_diagonal_cells": 110,
+      "positive_cells": 110,
+      "diagonal_best_targets": 11,
+      "min": 0.02054007594,
+      "median": 0.51165813165,
+      "mean": 3.862053379628455,
+      "max": 33.30367673,
+      "late_median": 0.25413345244999996
+    },
+    {
+      "component": "norm",
+      "off_diagonal_cells": 110,
+      "positive_cells": 110,
+      "diagonal_best_targets": 11,
+      "min": 0.03240370369,
+      "median": 0.34587656775,
+      "mean": 3.075628068338273,
+      "max": 26.1562242,
+      "late_median": 0.1638045648
+    }
+  ],
+  "paired_comparison": {
+    "graph_greater_than_norm_cells": 70,
+    "graph_greater_than_joint_cells": 69,
+    "norm_greater_than_joint_cells": 56,
+    "late_cells": 30,
+    "late_joint_less_than_both_components_cells": 22
+  },
+  "source_manifests": [
+    {
+      "schema_version": 1,
+      "status": "complete",
+      "created_at_utc": "2026-10-12T17:24:38.048169+00:00",
+      "variant": {
+        "label": "case118 Base seed 0",
+        "network": "case118_ieee",
+        "size": "Base",
+        "seed": 0,
+        "model_dir": "/Users/yyh/Desktop/inside-genco/assets/model/case118_ieee/base/seed0",
+        "raw_dir": "/Users/yyh/Desktop/inside-genco/assets/data/case118_ieee/raw",
+        "split": "/Users/yyh/Desktop/inside-genco/assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json",
+        "selection": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+        "data_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+        "model_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+        "name": "case118_base_seed0"
+      },
+      "selection": {
+        "path": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+        "sha256": "018559ffab4266e3bcf255ce4bf942fdc14183b288863de66c617f00d9de16e0",
+        "name": "all",
+        "research_split": "all",
+        "dependencies": {
+          "assets/manifests/case118-assets.lock.json": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+          "assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json": "227909485377cff58831dc4fcd3e586ba820f5af6619d979faff5af6f0e99c1a",
+          "assets/operating-conditions/case118/scenario_index.csv": "c13eaeeb9deb0cc57a1b6512017d98f7a03bcc1f59443e487c366a45106dc619",
+          "assets/operating-conditions/case118/group_splits.json": "ed65e2d87242bd2fe7d1f3ef8dfe5bf24902414e426f36eda8385f2d051ecbec"
+        },
+        "research_splits": [
+          "exploration",
+          "confirmation",
+          "reserve"
+        ]
+      },
+      "conditions": 115,
+      "config_sha256": "b6f0e603d394f0ac9e17528a487756c1975ee439820d71132387bb353de817fc",
+      "data_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+      "model_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+      "device": "cpu",
+      "forward_dtype": "float32",
+      "metric_dtype": "float64",
+      "threads": 4,
+      "targets": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "sources": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "platform": "macOS-15.7.3-arm64-arm-64bit",
+      "research_git_commit": "d4c5fcefc0244a207c3046d3205ef37936abc278",
+      "model_state_sha256_before": "c3c4bbf13d857bf6ff850d2fcd9eb65c5a399425f2fb0981beafc18e00abeb19",
+      "model_state_sha256_after": "c3c4bbf13d857bf6ff850d2fcd9eb65c5a399425f2fb0981beafc18e00abeb19",
+      "process_peak_RSS_bytes": 4444258304,
+      "summary": {
+        "variant": "case118_base_seed0",
+        "label": "case118 Base seed 0",
+        "conditions": 115,
+        "targets": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "sources": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "diagonal_best_targets": 11,
+        "comparable_targets": 11,
+        "model_state_sha256": "c3c4bbf13d857bf6ff850d2fcd9eb65c5a399425f2fb0981beafc18e00abeb19",
+        "evaluation_seconds": 260.785348709207
+      }
+    },
+    {
+      "schema_version": 1,
+      "status": "complete",
+      "created_at_utc": "2026-10-14T18:05:41.501413+00:00",
+      "variant": {
+        "label": "case118 Base seed 0",
+        "network": "case118_ieee",
+        "size": "Base",
+        "seed": 0,
+        "model_dir": "/Users/yyh/Desktop/inside-genco/assets/model/case118_ieee/base/seed0",
+        "raw_dir": "/Users/yyh/Desktop/inside-genco/assets/data/case118_ieee/raw",
+        "split": "/Users/yyh/Desktop/inside-genco/assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json",
+        "selection": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+        "data_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+        "model_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+        "name": "case118_base_seed0"
+      },
+      "selection": {
+        "path": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+        "sha256": "018559ffab4266e3bcf255ce4bf942fdc14183b288863de66c617f00d9de16e0",
+        "name": "all",
+        "research_split": "all",
+        "dependencies": {
+          "assets/manifests/case118-assets.lock.json": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+          "assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json": "227909485377cff58831dc4fcd3e586ba820f5af6619d979faff5af6f0e99c1a",
+          "assets/operating-conditions/case118/scenario_index.csv": "c13eaeeb9deb0cc57a1b6512017d98f7a03bcc1f59443e487c366a45106dc619",
+          "assets/operating-conditions/case118/group_splits.json": "ed65e2d87242bd2fe7d1f3ef8dfe5bf24902414e426f36eda8385f2d051ecbec"
+        },
+        "research_splits": [
+          "exploration",
+          "confirmation",
+          "reserve"
+        ]
+      },
+      "conditions": 115,
+      "config_sha256": "b6f0e603d394f0ac9e17528a487756c1975ee439820d71132387bb353de817fc",
+      "data_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+      "model_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+      "device": "cpu",
+      "forward_dtype": "float32",
+      "metric_dtype": "float64",
+      "threads": 4,
+      "component": "graph",
+      "code_sha256": {
+        "scripts/run_operator_substitution.py": "8c3038de66897a160adf88dabfe5794ab2ca2b943095370b1bfd9839f6806721",
+        "src/inside_genco/trace.py": "0406061337ed546aecc50795b5af5ca70787415e6b54e99cfd329d4259cccf38",
+        "src/inside_genco/interventions.py": "349f5b5c4b5db9faf908d8bb3e60af5d7e078073104f92689d09a6d0cc266926"
+      },
+      "targets": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "sources": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "baseline_forward_verified": true,
+      "platform": "macOS-15.7.3-arm64-arm-64bit",
+      "research_git_commit": "c77b2dce881845770501d78000a013928a124507",
+      "model_state_sha256_before": "c3c4bbf13d857bf6ff850d2fcd9eb65c5a399425f2fb0981beafc18e00abeb19",
+      "model_state_sha256_after": "c3c4bbf13d857bf6ff850d2fcd9eb65c5a399425f2fb0981beafc18e00abeb19",
+      "process_peak_RSS_bytes": 2896707584,
+      "summary": {
+        "variant": "case118_base_seed0",
+        "component": "graph",
+        "label": "case118 Base seed 0",
+        "conditions": 115,
+        "targets": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "sources": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "diagonal_best_targets": 11,
+        "comparable_targets": 11,
+        "model_state_sha256": "c3c4bbf13d857bf6ff850d2fcd9eb65c5a399425f2fb0981beafc18e00abeb19",
+        "evaluation_seconds": 316.23348762467504
+      }
+    },
+    {
+      "schema_version": 1,
+      "status": "complete",
+      "created_at_utc": "2026-10-14T18:05:42.232623+00:00",
+      "variant": {
+        "label": "case118 Base seed 0",
+        "network": "case118_ieee",
+        "size": "Base",
+        "seed": 0,
+        "model_dir": "/Users/yyh/Desktop/inside-genco/assets/model/case118_ieee/base/seed0",
+        "raw_dir": "/Users/yyh/Desktop/inside-genco/assets/data/case118_ieee/raw",
+        "split": "/Users/yyh/Desktop/inside-genco/assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json",
+        "selection": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+        "data_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+        "model_lock": "/Users/yyh/Desktop/inside-genco/assets/manifests/case118-assets.lock.json",
+        "name": "case118_base_seed0"
+      },
+      "selection": {
+        "path": "/Users/yyh/Desktop/inside-genco/assets/operating-conditions/case118/all.json",
+        "sha256": "018559ffab4266e3bcf255ce4bf942fdc14183b288863de66c617f00d9de16e0",
+        "name": "all",
+        "research_split": "all",
+        "dependencies": {
+          "assets/manifests/case118-assets.lock.json": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+          "assets/model/mlflow/eval/case118_ieee/base/seed0/8289694ec85b4df080e584d18a815b57/artifacts/stats/case118_ieee_scenario_splits.json": "227909485377cff58831dc4fcd3e586ba820f5af6619d979faff5af6f0e99c1a",
+          "assets/operating-conditions/case118/scenario_index.csv": "c13eaeeb9deb0cc57a1b6512017d98f7a03bcc1f59443e487c366a45106dc619",
+          "assets/operating-conditions/case118/group_splits.json": "ed65e2d87242bd2fe7d1f3ef8dfe5bf24902414e426f36eda8385f2d051ecbec"
+        },
+        "research_splits": [
+          "exploration",
+          "confirmation",
+          "reserve"
+        ]
+      },
+      "conditions": 115,
+      "config_sha256": "b6f0e603d394f0ac9e17528a487756c1975ee439820d71132387bb353de817fc",
+      "data_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+      "model_lock_sha256": "0623356d9af206312681395c9d0587cf52d80cba73ccaac85252e7969f574138",
+      "device": "cpu",
+      "forward_dtype": "float32",
+      "metric_dtype": "float64",
+      "threads": 4,
+      "component": "norm",
+      "code_sha256": {
+        "scripts/run_operator_substitution.py": "8c3038de66897a160adf88dabfe5794ab2ca2b943095370b1bfd9839f6806721",
+        "src/inside_genco/trace.py": "0406061337ed546aecc50795b5af5ca70787415e6b54e99cfd329d4259cccf38",
+        "src/inside_genco/interventions.py": "349f5b5c4b5db9faf908d8bb3e60af5d7e078073104f92689d09a6d0cc266926"
+      },
+      "targets": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "sources": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "baseline_forward_verified": true,
+      "platform": "macOS-15.7.3-arm64-arm-64bit",
+      "research_git_commit": "c77b2dce881845770501d78000a013928a124507",
+      "model_state_sha256_before": "c3c4bbf13d857bf6ff850d2fcd9eb65c5a399425f2fb0981beafc18e00abeb19",
+      "model_state_sha256_after": "c3c4bbf13d857bf6ff850d2fcd9eb65c5a399425f2fb0981beafc18e00abeb19",
+      "process_peak_RSS_bytes": 2921611264,
+      "summary": {
+        "variant": "case118_base_seed0",
+        "component": "norm",
+        "label": "case118 Base seed 0",
+        "conditions": 115,
+        "targets": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "sources": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "diagonal_best_targets": 11,
+        "comparable_targets": 11,
+        "model_state_sha256": "c3c4bbf13d857bf6ff850d2fcd9eb65c5a399425f2fb0981beafc18e00abeb19",
+        "evaluation_seconds": 314.9392008748837
+      }
+    }
+  ],
+  "figure": "figures/operators/operator_substitution_matrix.png",
+  "color_scale": "log"
+}

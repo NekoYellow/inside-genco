@@ -87,13 +87,21 @@ These descriptive correlations suggest an association between CKA change and byp
 
 ## Evidence 3: learned correction blocks are not interchangeable
 
-For every target correction `t` and source correction `s` in 2–12, the operator-substitution experiment runs the normal chain while replacing the target's graph Transformer and both LayerNorms with those learned at the source depth. The diagonal is the unchanged checkpoint. This intervention preserves the state arriving at depth `t` and directly tests whether similar latent geometry also implies correction-block interchangeability.
+For every target correction `t` and source correction `s` in 2–12, the operator-substitution experiment runs the normal chain while replacing components at the target with those learned at the source depth. We compare three modes on the same primary checkpoint and 115 conditions: joint graph Transformer + bus/generator LayerNorm substitution, graph-only substitution with the target LayerNorms retained, and LayerNorm-only substitution with the target graph Transformer retained. The diagonal is the unchanged checkpoint. These interventions preserve the state arriving at depth `t` and test which components contribute to correction-block interchangeability.
 
 ![Cross-correction operator substitution](../figures/operators/operator_substitution_matrix.png)
 
-*Figure 6 — Mean final residual damage when the target correction uses the source correction's graph Transformer and LayerNorms.*
+*Figure 6 — Mean final residual damage for joint, graph-only, and LayerNorm-only substitution, shown on a shared logarithmic color scale.*
 
-The unchanged diagonal is best for **11/11** targets. Every one of the **110** off-diagonal substitutions increases mean final residual: the smallest increase is **0.0105 p.u.**, the median is **0.371 p.u.**, and the maximum is **34.54 p.u.** Even neighboring late correction blocks are not freely interchangeable.
+As expected, all **110** off-diagonal substitutions increase mean final residual in each mode. For joint substitution, the smallest increase is **0.0105 p.u.**, the median is **0.371 p.u.**, and the maximum is **34.54 p.u.** Even neighboring late correction blocks are not freely interchangeable.
+
+| Substituted components | Off-diagonal pairs with positive mean damage | Median mean damage, steps 2–12 (p.u.) | Median mean damage, steps 7–12 (p.u.) |
+| --- | ---: | ---: | ---: |
+| Graph + both LayerNorms | 110/110 | 0.371 | 0.0527 |
+| Graph only | 110/110 | 0.512 | 0.2541 |
+| Both LayerNorms only | 110/110 | 0.346 | 0.1638 |
+
+Each cell's damage is averaged over conditions before taking the median across off-diagonal pairs; the late subset contains 30 pairs with both source and target in steps 7–12. Both graph processing and normalization contribute to substitution sensitivity. Moreover, joint substitution is less damaging than either single-component substitution in **22/30** late pairs: moving a learned graph–LayerNorm pair together often preserves more useful behavior than separating it. This pattern is consistent with co-adaptation between graph operators and their normalization parameters.
 
 This result suggests functional specialization within the released untied checkpoint.
 
@@ -139,6 +147,6 @@ Below lists a few metrics used in this research, as well as some related GENCO c
 | Node activity | A node is active when $\lVert h_{\mathrm{graph}}-h_{\mathrm{in}}\rVert_2/(\lVert h_{\mathrm{in}}\rVert_2+10^{-12})>\tau$. Average the active fraction equally across conditions, separately for buses and generators. |
 | Functional/net node update | The same relative-update calculation, using $h_{\mathrm{out}}$ at corrections 2–11 and $h_{\mathrm{graph}}$ at correction 12 because final feedback is not consumed. |
 | Bypass damage | For each condition, subtract baseline final $R_\infty$ from final $R_\infty$ after skipping a correction. |
-| Operator-substitution damage | Mean signed final $\Delta R_\infty$ after replacing the target's graph Transformer and both LayerNorms with those from another depth. |
+| Operator-substitution damage | Mean signed final $\Delta R_\infty$ after replacing the target's graph Transformer, both LayerNorms, or their combination with those from another depth. |
 | Spearman correlation | Correlation between the ranks of local representation change and mean positive bypass damage across steps. |
 | Bootstrap confidence interval | Resample conditions with replacement 2,000 times, recompute damage means and Spearman correlation, and take the 2.5th–97.5th percentiles. CKA stays fixed, so the interval describes damage-sampling uncertainty conditional on the observed CKA. |

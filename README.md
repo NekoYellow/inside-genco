@@ -24,6 +24,8 @@ Besides, we skip individual steps and check how the final answer changes. A step
 
 We replace a step's learned processing block with one from another step. These swaps make the final answers worse on average in the model tested, supporting the idea that different steps have learned different roles.
 
+Swapping graph processing and normalization separately shows that both matter. In later steps, moving the learned pair together is often less disruptive than replacing either part alone.
+
 ![Operator substitution](figures/operators/operator_substitution_matrix.png)
 
 The released model has learned different roles for its steps. But could a shared block learn to refine the changing state just as well? With limited compute, we trained small models with separate or shared blocks. They achieved similar performance and showed similar patterns of internal refinement, while the shared models used far fewer parameters.

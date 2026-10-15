@@ -16,8 +16,11 @@ class InterventionPlan:
 
     skip_layers: frozenset[int] = field(default_factory=frozenset)
     operator_sources: Mapping[int, int] = field(default_factory=dict)
+    operator_component: str = "joint"
 
     def validate(self, num_layers: int) -> None:
+        if self.operator_component not in ("joint", "graph", "norm"):
+            raise ValueError("operator component must be joint, graph, or norm")
         if num_layers < 2:
             raise ValueError("trace adapter expects at least two layers")
         for layer in self.skip_layers:

@@ -24,13 +24,15 @@ def _copy(tensor: torch.Tensor, to_cpu: bool) -> torch.Tensor:
 def _operator_modules(
     model: torch.nn.Module, target_index: int, plan: InterventionPlan
 ) -> tuple[torch.nn.Module, torch.nn.Module, torch.nn.Module, int]:
-    """Resolve one graph operator and its paired node-type normalizations."""
+    """Resolve graph and normalization sources for joint or component swaps."""
 
     source_index = int(plan.operator_sources.get(target_index, target_index))
+    graph_index = target_index if plan.operator_component == "norm" else source_index
+    norm_index = target_index if plan.operator_component == "graph" else source_index
     return (
-        model.layers[source_index],
-        model.norms_bus[source_index],
-        model.norms_gen[source_index],
+        model.layers[graph_index],
+        model.norms_bus[norm_index],
+        model.norms_gen[norm_index],
         source_index,
     )
 

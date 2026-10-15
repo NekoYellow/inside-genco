@@ -103,6 +103,7 @@ def main() -> None:
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--targets", help="comma-separated one-based target corrections")
     parser.add_argument("--sources", help="comma-separated one-based source corrections")
+    parser.add_argument("--component", choices=("joint", "graph", "norm"), default="joint")
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
     if args.threads < 1 or (args.batch_size is not None and args.batch_size < 1):
@@ -134,7 +135,7 @@ def main() -> None:
             raise ValueError(f"missing or corrupt input: {entry['local']}")
 
     output = (
-        args.output or ROOT / f"outputs/operator-substitution/{args.variant}"
+        args.output or ROOT / "outputs/operator-substitution" / (args.variant if args.component == "joint" else f"{args.variant}-{args.component}")
     ).resolve()
     if output.exists():
         manifest_path = output / "manifest.json"
@@ -144,6 +145,7 @@ def main() -> None:
         if (
             previous.get("status") != "complete"
             or previous.get("variant", {}).get("name") != args.variant
+            or previous.get("component", "joint") != args.component
         ):
             raise ValueError("refusing to overwrite an incomplete or mismatched artifact")
     else:
@@ -167,6 +169,9 @@ def main() -> None:
         "forward_dtype": "float32",
         "metric_dtype": "float64",
         "threads": args.threads,
+        "component": args.component,
+        "code_sha256": {str(p.relative_to(ROOT)): sha256(p) for p in (
+            Path(__file__), ROOT / "src/inside_genco/trace.py", ROOT / "src/inside_genco/interventions.py")},
     }
 
     def save_manifest() -> None:
@@ -194,6 +199,7 @@ def main() -> None:
         state_before = model_state_sha256(task)
         adapter = TraceForwardAdapter(task)
         rows = []
+        completed = 0
 
         with torch.inference_mode():
             for batch, groups, topologies in graph_batches(
@@ -219,6 +225,11 @@ def main() -> None:
                     "float64",
                 )
                 baseline_by_id = rows_by_scenario(baseline_rows)
+                if completed == 0:
+                    original = task.model(batch.x_dict, batch.edge_index_dict, batch.edge_attr_dict, batch.mask_dict)
+                    for node in ("bus", "gen"):
+                        torch.testing.assert_close(baseline.output[node], original[node], rtol=1e-5, atol=1e-6)
+                    manifest["baseline_forward_verified"] = True
 
                 for target_step in targets:
                     for source_step in sources:
@@ -231,7 +242,8 @@ def main() -> None:
                                 batch.edge_attr_dict,
                                 batch.mask_dict,
                                 intervention=InterventionPlan(
-                                    operator_sources={target_step - 1: source_step - 1}
+                                    operator_sources={target_step - 1: source_step - 1},
+                                    operator_component=args.component,
                                 ),
                             )
                             changed_rows, _ = scenario_metrics(
@@ -282,6 +294,9 @@ def main() -> None:
                                 }
                             )
 
+                completed += len(batch.scenario_id)
+                print(f"{args.component}: {completed}/{len(ids)} conditions", flush=True)
+
         frame = pd.DataFrame(rows)
         expected_rows = len(ids) * len(targets) * len(sources)
         if len(frame) != expected_rows:
@@ -300,6 +315,7 @@ def main() -> None:
         ]
         result = {
             "variant": args.variant,
+            "component": args.component,
             "label": variant["label"],
             "conditions": len(ids),
             "targets": targets,
